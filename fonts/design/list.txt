@@ -4,3 +4,4 @@
 Noto Sans SC (可变字体) | NotoSansSC.ttf | OFL
 站酷快乐体 (ZCOOL KuaiLe) | ZCOOL_KuLeTi-Regular.ttf | 免费商用
 站酷文艺体 (ZCOOL WenYi) | ZCOOL_WenYiTi-Regular.ttf | 免费商用
+阿里妈妈数黑体 | AlibabaShuHeiTi.ttf | 免费商用
