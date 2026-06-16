@@ -1,124 +1,125 @@
 #!/bin/bash
 # ==============================================================
-# LFI 安装核心逻辑 — 从GitHub拉取开源字体并安装
+# LFI 安装核心逻辑 — 从自有GitHub Release拉取字体包并安装
 # ==============================================================
+
+LFI_RELEASE="v1.0.0"
 
 # -------- 安装一个场景的字体 --------
 install_scenario() {
     local scenario="$1"
+    local pack_url="https://github.com/${REPO}/releases/download/${LFI_RELEASE}/lfi-fonts-${scenario}-v1.tar.gz"
     local list_url=$(github_raw "fonts/${scenario}/list.txt")
     
     log_step "安装 ${scenario} 场景字体"
     
-    # 下载字体清单
-    local list_content
-    list_content=$(curl -fsSL "$list_url" 2>/dev/null) || {
-        log_warn "场景 '$scenario' 字体清单暂不可用"
-        return
-    }
-    
     # 创建字体目录
     if [ "$HAS_ROOT" = true ]; then
-        mkdir -p "$FONT_DIR_SYSTEM"
+        sudo mkdir -p "$FONT_DIR_SYSTEM"
     fi
     mkdir -p "$FONT_DIR_USER"
+    
+    local pack_file="$DOWNLOAD_DIR/lfi-fonts-${scenario}-v1.tar.gz"
+    local extract_dir="$DOWNLOAD_DIR/${scenario}_extract"
+    mkdir -p "$extract_dir"
+    
+    echo ""
+    echo -ne "  ${BLUE}↓${NC} 下载字体包 (${scenario})... "
+    
+    # 从 Release 下载打包好的字体
+    if curl -fSL --connect-timeout 15 --max-time 300 "$pack_url" -o "$pack_file" 2>/dev/null; then
+        local size=$(du -h "$pack_file" | cut -f1)
+        echo -e "${GREEN}${size}${NC}"
+        
+        echo -ne "  ${BLUE}⟳${NC} 解压中... "
+        if tar xzf "$pack_file" -C "$extract_dir" 2>/dev/null; then
+            echo -e "${GREEN}完成${NC}"
+            
+            # 安装所有字体文件
+            local count=0
+            for font_file in "$extract_dir"/*.{ttf,ttc,otf,zip} 2>/dev/null; do
+                [ -f "$font_file" ] || continue
+                local fname=$(basename "$font_file")
+                
+                # 跳过已安装的
+                if [ -f "$FONT_DIR_USER/$fname" ] || ([ "$HAS_ROOT" = true ] && [ -f "$FONT_DIR_SYSTEM/$fname" ]); then
+                    continue
+                fi
+                
+                # zip文件需要解压
+                if [[ "$fname" == *.zip ]]; then
+                    local zip_dir="$extract_dir/${fname%.zip}"
+                    mkdir -p "$zip_dir"
+                    if unzip -q -o "$font_file" -d "$zip_dir" 2>/dev/null; then
+                        for inner in "$zip_dir"/*.{ttf,otf} 2>/dev/null; do
+                            [ -f "$inner" ] || continue
+                            cp "$inner" "$FONT_DIR_USER/" 2>/dev/null
+                            [ "$HAS_ROOT" = true ] && sudo cp "$inner" "$FONT_DIR_SYSTEM/" 2>/dev/null
+                            ((count++))
+                        done
+                    fi
+                else
+                    cp "$font_file" "$FONT_DIR_USER/" 2>/dev/null
+                    [ "$HAS_ROOT" = true ] && sudo cp "$font_file" "$FONT_DIR_SYSTEM/" 2>/dev/null
+                    ((count++))
+                fi
+            done
+            
+            echo -e "  ${GREEN}✓${NC} 安装了 ${BLUE}${count}${NC} 个字体文件"
+        else
+            echo -e "${RED}解压失败${NC}"
+        fi
+    else
+        echo -e "${RED}下载失败${NC}"
+        echo -e "  ${YELLOW}尝试直接安装...${NC}"
+        # 回退：逐一下载（兼容旧的list.txt格式）
+        install_scenario_fallback "$scenario" "$list_url"
+    fi
+    
+    refresh_cache
+}
+
+# -------- 回退方案：逐一下载 --------
+install_scenario_fallback() {
+    local scenario="$1"
+    local list_url="$2"
+    
+    local list_content
+    list_content=$(curl -fsSL "$list_url" 2>/dev/null) || {
+        log_warn "场景 '$scenario' 字体清单不可用"
+        return
+    }
     
     local downloaded=0
     local skipped=0
     
-    echo -e "${YELLOW}"
-    echo "    下载中... 请耐心等待"
-    echo -e "${NC}"
-    
-    # 逐行解析清单
-    # 格式: 名称 | 下载URL | 文件名 | 许可证(可选)
-    while IFS='|' read -r name url file license; do
-        # 跳过注释和空行
+    while IFS='|' read -r name path license; do
         [[ "$name" =~ ^#.*$ ]] && continue
-        [ -z "$name" ] && [ -z "$url" ] && continue
+        [ -z "$name" ] && continue
         
-        # 去除首尾空格
         name=$(echo "$name" | xargs)
-        url=$(echo "$url" | xargs)
-        file=$(echo "$file" | xargs)
+        path=$(echo "$path" | xargs)
+        local fname=$(basename "$path")
         
-        # 目标路径
-        local user_target="$FONT_DIR_USER/$file"
-        local sys_target="$FONT_DIR_SYSTEM/$file"
-        
-        # 检查文件是否已存在
-        if [ -f "$sys_target" ] || [ -f "$user_target" ]; then
-            echo -e "  ${YELLOW}⏭${NC} ${name} — 已存在，跳过"
+        # 检查是否已存在
+        if [ -f "$FONT_DIR_USER/$fname" ] || ([ "$HAS_ROOT" = true ] && [ -f "$FONT_DIR_SYSTEM/$fname" ]); then
+            echo -e "  ${YELLOW}⏭${NC} ${name} — 已存在"
             ((skipped++))
             continue
         fi
         
         echo -ne "  ${BLUE}↓${NC} ${name}... "
-        
-        # 下载（支持zip和ttf/otf）
-        local tmp_file="$DOWNLOAD_DIR/$file"
-        if curl -fSL --connect-timeout 15 --max-time 120 "$url" -o "$tmp_file" 2>/dev/null; then
-            # 如果是zip，解压
-            if [[ "$file" == *.zip ]]; then
-                unzip -q -o "$tmp_file" -d "$DOWNLOAD_DIR/${file%.zip}" 2>/dev/null
-                # 复制所有.ttf/.otf文件
-                if [ "$HAS_ROOT" = true ]; then
-                    cp "$DOWNLOAD_DIR/${file%.zip}"/*.ttf "$FONT_DIR_SYSTEM/" 2>/dev/null
-                    cp "$DOWNLOAD_DIR/${file%.zip}"/*.otf "$FONT_DIR_SYSTEM/" 2>/dev/null
-                fi
-                cp "$DOWNLOAD_DIR/${file%.zip}"/*.ttf "$FONT_DIR_USER/" 2>/dev/null
-                cp "$DOWNLOAD_DIR/${file%.zip}"/*.otf "$FONT_DIR_USER/" 2>/dev/null
-                echo -e "${GREEN}完成${NC}"
-            else
-                if [ "$HAS_ROOT" = true ]; then
-                    cp "$tmp_file" "$sys_target"
-                fi
-                cp "$tmp_file" "$user_target"
-                echo -e "${GREEN}完成${NC}"
-            fi
-            ((downloaded++))
-        else
-            echo -e "${RED}失败${NC}"
-            log_warn "下载失败: $url"
-        fi
-        
+        log_warn "回退模式不支持单文件下载，跳过"
     done <<< "$list_content"
-    
-    echo ""
-    log_info "场景 '${scenario}': ${GREEN}${downloaded}${NC} 个安装, ${YELLOW}${skipped}${NC} 个已存在"
-    
-    # 刷新缓存
-    refresh_cache
 }
 
-# -------- 安装开源替代方案（7号菜单） --------
-install_opensource_alternative() {
-    log_step "开源替代方案说明"
-    echo ""
-    echo -e "  ${WHITE}本模式安装以下开源字体，替代Windows商业字体：${NC}"
-    echo ""
-    echo -e "  ${BLUE}Windows 原版${NC}    → ${GREEN}开源替代${NC}"
-    echo -e "  ─────────────────────────────"
-    echo -e "  微软雅黑          → ${GREEN}得意黑 Smiley Sans${NC}"
-    echo -e "  宋体              → ${GREEN}思源宋体 Noto Serif CJK SC${NC}"
-    echo -e "  黑体              → ${GREEN}思源黑体 Noto Sans CJK SC${NC}"
-    echo -e "  楷体              → ${GREEN}霞鹜文楷 LXGW WenKai${NC}"
-    echo -e "  Arial             → ${GREEN}Liberation Sans${NC}"
-    echo -e "  Times New Roman   → ${GREEN}Liberation Serif${NC}"
-    echo -e "  Courier New       → ${GREEN}Liberation Mono${NC}"
-    echo -e "  Consolas          → ${GREEN}JetBrains Mono / Cascadia Code${NC}"
-    echo ""
-    echo -ne "  ${YELLOW}是否继续安装? (Y/n): ${NC}"
-    read -r confirm
-    if [ "$confirm" != "n" ] && [ "$confirm" != "N" ]; then
-        install_scenario "zh-cn"
-        install_scenario "coding"
-        # fontconfig映射自动配置
-        configure_fontconfig_alias
-        log_info "开源替代方案安装完成！"
-    else
-        log_info "已取消"
-    fi
+# -------- 安装全部场景 --------
+install_all() {
+    log_step "全部安装"
+    for scene in zh-cn coding; do
+        install_scenario "$scene"
+    done
+    log_info "全部场景安装完成！"
 }
 
 # -------- 刷新字体缓存 --------

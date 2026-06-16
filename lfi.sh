@@ -14,6 +14,7 @@ set -e
 REPO="sinyche/linux-font-installer"
 BRANCH="main"
 LFI_VERSION="1.0.0"
+LFI_RELEASE="v1.0.0"
 
 # -------- 颜色 --------
 RED='\033[0;31m'

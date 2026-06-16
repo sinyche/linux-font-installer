@@ -1,20 +1,7 @@
 # LFI 字体清单 — 编程场景 (coding)
-# 格式: 字体名称 | 下载URL | 文件名 | 许可证
+# 来源: GitHub Release v1.0.0 (sinyche/linux-font-installer)
 
-# ===== JetBrains Mono (OFL) =====
-# GitHub: https://github.com/JetBrains/JetBrainsMono
-JetBrains Mono | https://github.com/JetBrains/JetBrainsMono/releases/download/v2.304/JetBrainsMono-2.304.zip | JetBrainsMono.zip | OFL
-
-# ===== Cascadia Code (OFL) =====
-# GitHub: https://github.com/microsoft/cascadia-code
-Cascadia Code | https://github.com/microsoft/cascadia-code/releases/download/v2404.23/CascadiaCode-2404.23.zip | CascadiaCode.zip | OFL
-
-# ===== Fira Code (OFL) =====
-# GitHub: https://github.com/tonsky/FiraCode
-Fira Code | https://github.com/tonsky/FiraCode/releases/download/6.2/Fira_Code_v6.2.zip | FiraCode.zip | OFL
-
-# ===== Nerd Fonts 精选 (MIT) =====
-# GitHub: https://github.com/ryanoasis/nerd-fonts
-# 体积较大，提供单个热门字体下载
-JetBrainsMono Nerd Font | https://github.com/ryanoasis/nerd-fonts/releases/download/v3.2.1/JetBrainsMono.zip | JetBrainsMonoNF.zip | MIT
-FiraCode Nerd Font | https://github.com/ryanoasis/nerd-fonts/releases/download/v3.2.1/FiraCode.zip | FiraCodeNF.zip | MIT
+JetBrains Mono | JetBrainsMono.zip | OFL
+Cascadia Code | CascadiaCode.zip | OFL
+Fira Code | FiraCode.zip | OFL
+JetBrains Mono Nerd Font | JetBrainsMonoNF.zip | MIT
