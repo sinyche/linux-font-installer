@@ -1,9 +1,10 @@
 # LFI 字体清单 — 中文场景 (zh-cn)
 # 来源: GitHub Release v1.0.0 (sinyche/linux-font-installer)
-# 格式: 字体名称 | 包内路径 | 许可证
 
 霞鹜文楷-Regular | LXGWWenKai-Regular.ttf | OFL
 霞鹜文楷-Bold | LXGWWenKai-Bold.ttf | OFL
 霞鹜文楷-Light | LXGWWenKai-Light.ttf | OFL
+霞鹜文楷-Mono | LXGWWenKaiMono-Regular.ttf | OFL
+得意黑 Smiley Sans | SmileySans.zip | OFL
 思源黑体 Noto Sans CJK SC | NotoSansCJK-Regular.ttc | OFL
 思源宋体 Noto Serif CJK SC | NotoSerifCJK-Regular.ttc | OFL

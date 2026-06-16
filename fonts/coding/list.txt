@@ -5,3 +5,8 @@ JetBrains Mono | JetBrainsMono.zip | OFL
 Cascadia Code | CascadiaCode.zip | OFL
 Fira Code | FiraCode.zip | OFL
 JetBrains Mono Nerd Font | JetBrainsMonoNF.zip | MIT
+Hack | Hack.zip | MIT
+Source Code Pro | SourceCodePro.zip | OFL
+Iosevka | Iosevka.zip | OFL
+Maple Mono Nerd Font | MapleMonoNF.zip | OFL
+Monaspace | Monaspace.zip | OFL
