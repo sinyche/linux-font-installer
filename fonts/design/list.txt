@@ -2,9 +2,26 @@
 # 来源: GitHub Release v1.0.0 (sinyche/linux-font-installer)
 
 Noto Sans SC (可变字体) | NotoSansSC.ttf | OFL
-站酷快乐体 (ZCOOL KuaiLe) | ZCOOL_KuLeTi-Regular.ttf | 免费商用
-站酷文艺体 (ZCOOL WenYi) | ZCOOL_WenYiTi-Regular.ttf | 免费商用
+站酷快乐体 | ZCOOL_KuLeTi-Regular.ttf | 免费商用
+站酷快乐体2016修订版 | ZCOOLKuaiLe2016.ttf | 免费商用
+站酷文艺体 | ZCOOL_WenYiTi-Regular.ttf | 免费商用
+站酷小薇LOGO体 | ZCOOLXiaoWeiLogo.otf | 免费商用
 阿里妈妈数黑体 | AlibabaShuHeiTi.ttf | 免费商用
 HarmonyOS Sans (鸿蒙字体) | HarmonyOS_SansSC_Regular.ttf | 免费商用
 OPPO Sans | OPPOSans-Regular.ttf | 免费商用
 MiSans (小米字体) | MiSans-Regular.ttf | 免费商用
+得意黑 | DeYiHei.otf | OFL
+庞门正道轻松体 | PangMenZhengDaoQingSongTi.otf | 免费商用
+杨任东竹石体-Regular | YRDZhuShi-Regular.ttf | 免费商用
+杨任东竹石体-Bold | YRDZhuShi-Bold.ttf | 免费商用
+杨任东竹石体-Heavy | YRDZhuShi-Heavy.ttf | 免费商用
+杨任东竹石体-SemiBold | YRDZhuShi-SemiBold.ttf | 免费商用
+杨任东竹石体-Medium | YRDZhuShi-Medium.ttf | 免费商用
+杨任东竹石体-Light | YRDZhuShi-Light.ttf | 免费商用
+杨任东竹石体-ExtraLight | YRDZhuShi-ExtraLight.ttf | 免费商用
+江西拙楷体 | JiangxiZhuoKai.ttf | 免费商用
+演示悠然小楷 | YanShiYouRanXiaoKai.ttf | 免费商用
+沐瑶随心手写体 | MuYaoSuiXinShouXieTi.ttf | 免费商用
+云峰静龙行书 | YunFengJingLongXingShu.ttf | 免费商用
+华光俊秀体 | HuaGuangJunXiuTi.ttf | 免费商用
+摄图摩登小方体 | SheTuMoDengXiaoFangTi.ttf | 免费商用
