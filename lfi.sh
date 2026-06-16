@@ -3,9 +3,8 @@
 # Linux Font Installer (LFI) — 一行命令搞定Linux字体问题
 # ==============================================================
 # 用法:
-#   bash <(curl -fsSL https://raw.githubusercontent.com/sinyche/linux-font-installer/main/lfi.sh)
-# 或:
-#   wget -qO- https://raw.githubusercontent.com/sinyche/linux-font-installer/main/lfi.sh | bash
+#   一行命令:
+#     bash <(curl -sL https://raw.githubusercontent.com/sinyche/linux-font-installer/main/lfi.sh)
 # ==============================================================
 
 set -e

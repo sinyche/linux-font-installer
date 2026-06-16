@@ -3,8 +3,10 @@
 > **一行命令，搞定 Linux 字体问题**
 
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/sinyche/linux-font-installer/main/lfi.sh)
+bash <(curl -sL https://raw.githubusercontent.com/sinyche/linux-font-installer/main/lfi.sh)
 ```
+
+> 推荐复制上面这一行粘贴到终端运行。
 
 ## 解决的问题
 
