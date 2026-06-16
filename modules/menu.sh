@@ -21,7 +21,7 @@ print_header() {
 
 # -------- 系统状态栏 --------
 print_status_bar() {
-    echo -e " ${BLUE}系统:${NC} ${OS:-unknown} | ${BLUE}架构:${NC} ${ARCH} | ${BLUE}包管理器:${NC} ${PKG_MGR}"
+    echo -e " ${BLUE}系统:${NC} ${OS:-unknown} ${DISTRO_FAMILY:+($DISTRO_FAMILY)} | ${BLUE}架构:${NC} ${ARCH} | ${BLUE}包管理器:${NC} ${PKG_MGR}"
     if [ "$WIN_AVAILABLE" = true ]; then
         echo -e " ${BLUE}Windows字体:${NC} ${GREEN}已检测到${NC} (${#WIN_FONT_DIRS[@]}个位置)"
     else

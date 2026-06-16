@@ -70,12 +70,7 @@ configure_font_priority() {
     echo ""
     
     local config_file
-    if [ "$HAS_ROOT" = true ]; then
-        config_file="/etc/fonts/local.conf"
-    else
-        mkdir -p "$HOME/.config/fontconfig"
-        config_file="$HOME/.config/fontconfig/fonts.conf"
-    fi
+    config_file=$(get_fontconfig_path)
     
     cat > "$config_file" << EOF
 <?xml version="1.0"?>
@@ -116,13 +111,7 @@ fix_wps_fonts() {
     log_step "WPS 字体修复"
     
     local config_file
-    if [ "$HAS_ROOT" = true ]; then
-        mkdir -p /etc/fonts
-        config_file="/etc/fonts/local.conf"
-    else
-        mkdir -p "$HOME/.config/fontconfig"
-        config_file="$HOME/.config/fontconfig/fonts.conf"
-    fi
+    config_file=$(get_fontconfig_path)
     
     # 检测WPS是否安装
     local wps_found=false
@@ -209,12 +198,7 @@ configure_fontconfig_alias() {
     log_step "开源替代字体别名配置"
     
     local config_file
-    if [ "$HAS_ROOT" = true ]; then
-        config_file="/etc/fonts/local.conf"
-    else
-        mkdir -p "$HOME/.config/fontconfig"
-        config_file="$HOME/.config/fontconfig/fonts.conf"
-    fi
+    config_file=$(get_fontconfig_path)
     
     local existing_content=""
     [ -f "$config_file" ] && existing_content=$(cat "$config_file")

@@ -92,7 +92,7 @@ extract_from_dual_boot() {
     mkdir -p "$mount_point"
     
     echo -ne "  ${BLUE}⟳${NC} 挂载中... "
-    if mount -t ntfs-3g "$part_dev" "$mount_point" 2>/dev/null || mount "$part_dev" "$mount_point" 2>/dev/null; then
+    if mount_ntfs "$part_dev" "$mount_point"; then
         echo -e "${GREEN}完成${NC}"
         
         local font_dir="$mount_point/Windows/Fonts"
@@ -219,7 +219,7 @@ extract_from_iso() {
                 umount "$mount_point" 2>/dev/null
             else
                 echo -e "${RED}失败${NC}"
-                log_error "挂载 ISO 失败，需要 root 权限"
+                log_error "挂载 ISO 失败（可能需要安装 fuseiso: sudo apt install fuseiso）"
             fi
             ;;
         wim)

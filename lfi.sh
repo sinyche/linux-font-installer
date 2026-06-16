@@ -137,6 +137,10 @@ detect_windows() {
 prepare_env() {
     mkdir -p "$MODULE_DIR" "$FONTLIST_DIR" "$DOWNLOAD_DIR"
     
+    # 预下载兼容模块
+    dl_module "compat.sh" > "$MODULE_DIR/compat.sh" 2>/dev/null || true
+    source "$MODULE_DIR/compat.sh" 2>/dev/null || true
+    
     # 检查依赖
     local missing=()
     for cmd in curl fc-list fc-cache; do
@@ -173,6 +177,9 @@ main() {
     
     # 加载菜单模块
     dl_module "menu.sh" | source /dev/stdin
+
+    # 加载menu模块后自动检测发行版
+    detect_distro
     
     # 进入菜单循环
     menu_loop

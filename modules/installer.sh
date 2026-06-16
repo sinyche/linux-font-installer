@@ -11,6 +11,9 @@ install_scenario() {
     local pack_url="https://github.com/${REPO}/releases/download/${LFI_RELEASE}/lfi-fonts-${scenario}-v1.tar.gz"
     local list_url=$(github_raw "fonts/${scenario}/list.txt")
     
+    # 载入兼容模块（使用distro专用函数）
+    detect_distro 2>/dev/null || true
+    
     log_step "安装 ${scenario} 场景字体"
     
     # 创建字体目录
