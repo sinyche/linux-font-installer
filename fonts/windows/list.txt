@@ -1,0 +1,29 @@
+# LFI Windows字体提取清单
+#
+# 本清单仅供 lfi.sh 的 extract-win.sh 模块使用
+# 列出的字体从用户已有的Windows系统中提取
+# LFI 不存储、不分发这些字体文件
+#
+# 格式: 显示名称 | 文件名1|文件名2|...
+# 多个文件名用 | 分隔（同一字体的不同变体）
+
+# Windows 常用中文字体
+微软雅黑 | msyh.ttc|msyhbd.ttc|msyhl.ttc
+宋体 | simsun.ttc|simsunb.ttf|simpfang.ttf
+黑体 | simhei.ttf
+楷体 | simkai.ttf
+仿宋 | simfang.ttf
+
+# Windows 英文字体
+Arial | arial.ttf|arialbd.ttf|arialbi.ttf|ariali.ttf
+Times New Roman | times.ttf|timesbd.ttf|timesbi.ttf|timesi.ttf
+Courier New | cour.ttf|courbd.ttf|courbi.ttf|couri.ttf
+Verdana | verdana.ttf|verdanab.ttf|verdanai.ttf|verdanaz.ttf
+Tahoma | tahoma.ttf|tahomabd.ttf
+Segoe UI | segoeui.ttf|segoeuib.ttf|segoeuii.ttf|segoeuiz.ttf
+Consolas | consola.ttf|consolab.ttf|consolai.ttf|consolaz.ttf
+
+# 符号字体 (WPS需要)
+Wingdings | wingding.ttf
+Webdings | webdings.ttf
+Symbol | symbol.ttf

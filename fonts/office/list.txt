@@ -1,0 +1,13 @@
+# LFI 字体清单 — 办公场景 (office)
+# 包含: WPS公文排版 / 政务文档 / 办公必备字体的开源替代
+# 注意: 仿宋_GB2312、楷体_GB2312、小标宋等为商业字体，请在fonts/windows/中查看
+
+# ===== LibreOffice 等办公软件基础字体 =====
+Liberation Sans | https://github.com/liberationfonts/liberation-fonts/files/7261480/liberation-fonts-ttf-2.1.5.tar.gz | liberation.tar.gz | OFL
+Liberation Serif | 同上(含在tar.gz中) | （同上） | OFL
+Liberation Mono | 同上(含在tar.gz中) | （同上） | OFL
+
+# ===== Noto 系列（Google开源） =====
+# 建议通过包管理器安装完整版
+# apt: fonts-noto-cjk-extra
+# dnf: google-noto-cjk-fonts

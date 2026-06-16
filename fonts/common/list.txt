@@ -1,0 +1,11 @@
+# LFI 通用/基础字体清单
+# 所有用户都推荐安装的基础字体
+
+# DejaVu 系（Linux标准回退字体，版本更新）
+DejaVu Sans |  |  | 系统自带
+DejaVu Sans Mono |  |  | 系统自带
+
+# Noto 系（Google，覆盖全 Unicode）
+# 建议通过系统包管理器安装完整noto字体包
+# Debian/Ubuntu: sudo apt install fonts-noto fonts-noto-cjk fonts-noto-color-emoji
+# Fedora: sudo dnf install google-noto-*-fonts

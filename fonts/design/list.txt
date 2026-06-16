@@ -1,0 +1,18 @@
+# LFI 字体清单 — 设计师/创意场景 (design)
+# 免费可商用中文字体合集
+
+# ===== 站酷系列 (免费可商用) =====
+# 站酷快乐体
+站酷快乐体 | https://static.zcool.cn/git/zcool/zk-kuileti.git/zk-kuileti.zip | zk-kuileti.zip | 免费商用
+# 站酷文艺体
+站酷文艺体 | https://static.zcool.cn/git/zcool/zk-wenyiti.git/zk-wenyiti.zip | zk-wenyiti.zip | 免费商用
+# 站酷尚黑体
+站酷尚黑体 | https://static.zcool.cn/git/zcool/zk-shangheit.zip | zk-shanghei.zip | 免费商用
+
+# ===== 阿里妈妈系列 (免费可商用) =====
+# 阿里妈妈数黑体
+阿里妈妈数黑体 | https://github.com/alibaba-fonts/AlibabaSans/releases/latest/download/AlibabaSans.zip | AlibabaSans.zip | 免费商用
+
+# ===== 庞门正道系列 (免费可商用) =====
+# 庞门正道标题体
+# 注: 需从官方公众号下载，此处仅作指引

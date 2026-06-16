@@ -1,0 +1,18 @@
+# LFI 字体清单 — 中文场景 (zh-cn)
+# 格式: 字体名称 | 下载URL | 文件名 | 许可证
+# 注释行以 # 开头
+
+# ===== 霞鹜文楷 LXGW WenKai (OFL) =====
+# GitHub: https://github.com/lxgw/LxgwWenKai
+霞鹜文楷-Regular | https://github.com/lxgw/LxgwWenKai/releases/download/v1.330/LXGWWenKai-Regular.ttf | LXGWWenKai-Regular.ttf | OFL
+霞鹜文楷-Bold | https://github.com/lxgw/LxgwWenKai/releases/download/v1.330/LXGWWenKai-Bold.ttf | LXGWWenKai-Bold.ttf | OFL
+霞鹜文楷-Light | https://github.com/lxgw/LxgwWenKai/releases/download/v1.330/LXGWWenKai-Light.ttf | LXGWWenKai-Light.ttf | OFL
+
+# ===== 得意黑 Smiley Sans (OFL) =====
+# GitHub: https://github.com/atelier-anchor/smiley-sans
+得意黑 | https://github.com/atelier-anchor/smiley-sans/releases/download/v2.0.1/SmileySans-Oblique.zip | SmileySans.zip | OFL
+
+# ===== 思源黑体 Source Han Sans SC (OFL) =====
+# 思源黑体体积较大，建议用户通过包管理器安装
+# Noto Sans CJK SC 可通过系统包管理器安装
+思源黑体-提示 | https://github.com/adobe-fonts/source-han-sans | README.md | OFL
