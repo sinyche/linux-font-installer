@@ -116,7 +116,7 @@ install_scenario_fallback() {
 # -------- 安装全部场景 --------
 install_all() {
     log_step "全部安装"
-    for scene in zh-cn coding; do
+    for scene in zh-cn office coding design; do
         install_scenario "$scene"
     done
     log_info "全部场景安装完成！"
