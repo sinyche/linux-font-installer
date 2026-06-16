@@ -5,3 +5,6 @@ Noto Sans SC (可变字体) | NotoSansSC.ttf | OFL
 站酷快乐体 (ZCOOL KuaiLe) | ZCOOL_KuLeTi-Regular.ttf | 免费商用
 站酷文艺体 (ZCOOL WenYi) | ZCOOL_WenYiTi-Regular.ttf | 免费商用
 阿里妈妈数黑体 | AlibabaShuHeiTi.ttf | 免费商用
+HarmonyOS Sans (鸿蒙字体) | HarmonyOS_SansSC_Regular.ttf | 免费商用
+OPPO Sans | OPPOSans-Regular.ttf | 免费商用
+MiSans (小米字体) | MiSans-Regular.ttf | 免费商用
