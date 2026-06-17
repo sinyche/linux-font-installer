@@ -111,30 +111,34 @@ detect_system() {
 
 detect_windows() {
     WIN_FONT_DIRS=()
+    WIN_AVAILABLE=false
     
-    # 常见挂载点
+    # ① 检查是否已安装 Windows 字体（从之前提取的）
+    local win_fonts_installed=0
+    for wf in msyh.ttc simsun.ttc simhei.ttf simkai.ttf simfang.ttf; do
+        if [ -f "$FONT_DIR_USER/$wf" ] || { [ "$HAS_ROOT" = true ] && [ -f "$FONT_DIR_SYSTEM/$wf" ]; }; then
+            win_fonts_installed=$((win_fonts_installed + 1))
+        fi
+    done
+    if [ "$win_fonts_installed" -ge 2 ]; then
+        WIN_AVAILABLE=true
+        return
+    fi
+    
+    # ② 检查 NTFS 分区挂载点
     for d in /mnt/Windows /mnt/windows /media/*/Windows /media/*/windows /run/media/*/Windows /run/media/*/windows /mnt/*/Windows /mnt/*/windows; do
         [ -d "$d/Fonts" ] && WIN_FONT_DIRS+=("$d/Fonts")
-        [ -d "$d/Fonts" ] && [ -d "$d/System32" ] && WIN_FOUND=true || true
+        [ -d "$d/Fonts" ] && [ -d "$d/System32" ] && WIN_AVAILABLE=true || true
     done
     
-    # Wine
+    # ③ Wine
     for w in "$HOME/.wine/drive_c/windows/Fonts" "$HOME/.local/share/wineprefixes/default/drive_c/windows/Fonts" /opt/wine-*/drive_c/windows/Fonts; do
         [ -d "$w" ] && WIN_FONT_DIRS+=("$w")
     done
     
-    # 检测Windows版本（从注册表或文件）
-    WIN_VERSION=""
-    for d in /mnt/Windows /mnt/windows; do
-        if [ -f "$d/System32/config/SOFTWARE" ]; then
-            WIN_VERSION="windows-unknown"
-        fi
-    done
-    
-    if [ ${#WIN_FONT_DIRS[@]} -gt 0 ]; then
+    # 如果通过 Wine 找到字体
+    if [ ${#WIN_FONT_DIRS[@]} -gt 0 ] && [ "$WIN_AVAILABLE" = false ]; then
         WIN_AVAILABLE=true
-    else
-        WIN_AVAILABLE=false
     fi
 }
 
@@ -1612,7 +1616,11 @@ print_header() {
 print_status_bar() {
     echo -e " ${BLUE}系统:${NC} ${OS:-unknown} ${DISTRO_FAMILY:+($DISTRO_FAMILY)} | ${BLUE}架构:${NC} ${ARCH} | ${BLUE}包管理器:${NC} ${PKG_MGR}"
     if [ "$WIN_AVAILABLE" = true ]; then
-        echo -e " ${BLUE}Windows字体:${NC} ${GREEN}已检测到${NC} (${#WIN_FONT_DIRS[@]}个位置)"
+        if [ ${#WIN_FONT_DIRS[@]} -gt 0 ]; then
+            echo -e " ${BLUE}Windows字体:${NC} ${GREEN}已检测到${NC} (${#WIN_FONT_DIRS[@]}个位置)"
+        else
+            echo -e " ${BLUE}Windows字体:${NC} ${GREEN}已安装${NC}"
+        fi
     else
         echo -e " ${BLUE}Windows字体:${NC} ${YELLOW}未检测到${NC}"
     fi
