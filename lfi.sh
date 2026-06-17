@@ -42,25 +42,22 @@ log_error() { echo -e "${RED}[✗]${NC} $1"; }
 log_step()  { echo -e "\n${BLUE}━━━ $1 ━━━${NC}"; }
 log_title() { echo -e "\n${BOLD}${WHITE}$1${NC}\n"; }
 
-# -------- URL读取 --------
+# -------- URL读取 + 模块加载 --------
 github_raw() {
     echo "https://raw.githubusercontent.com/${REPO}/${BRANCH}/$1"
 }
 
 dl_module() {
-    local url=$(github_raw "modules/$1")
-    curl -fsSL "$url" 2>/dev/null || {
-        log_error "加载模块失败: $1"
+    local name="$1"
+    local url=$(github_raw "modules/$name")
+    local target="$MODULE_DIR/$name"
+    
+    mkdir -p "$MODULE_DIR"
+    if ! curl -fsSL "$url" -o "$target" 2>/dev/null; then
+        log_error "加载模块失败: $name"
         exit 1
-    }
-}
-
-dl_fontlist() {
-    local url=$(github_raw "fonts/$1/list.txt")
-    curl -fsSL "$url" 2>/dev/null || {
-        log_warn "字体清单不可用: $1"
-        echo ""
-    }
+    fi
+    source "$target"
 }
 
 # -------- 系统检测 --------
@@ -136,10 +133,6 @@ detect_windows() {
 prepare_env() {
     mkdir -p "$MODULE_DIR" "$FONTLIST_DIR" "$DOWNLOAD_DIR"
     
-    # 预下载兼容模块
-    dl_module "compat.sh" > "$MODULE_DIR/compat.sh" 2>/dev/null || true
-    source "$MODULE_DIR/compat.sh" 2>/dev/null || true
-    
     # 检查依赖
     local missing=()
     for cmd in curl fc-list fc-cache; do
@@ -174,10 +167,12 @@ main() {
     detect_system
     prepare_env
     
-    # 加载菜单模块
-    dl_module "menu.sh" | source /dev/stdin
+    # 加载所有核心模块
+    for mod in menu.sh installer.sh extract-win.sh config.sh compat.sh; do
+        dl_module "$mod"
+    done
 
-    # 加载menu模块后自动检测发行版
+    # 检测发行版
     detect_distro
     
     # 进入菜单循环

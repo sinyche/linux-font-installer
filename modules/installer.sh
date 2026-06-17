@@ -3,8 +3,6 @@
 # LFI 安装核心逻辑 — 从自有GitHub Release拉取字体包并安装
 # ==============================================================
 
-LFI_RELEASE="v1.0.0"
-
 # -------- 安装一个场景的字体 --------
 install_scenario() {
     local scenario="$1"
@@ -40,9 +38,10 @@ install_scenario() {
             
             # 安装所有字体文件
             local count=0
-            for font_file in "$extract_dir"/*.{ttf,ttc,otf,zip} 2>/dev/null; do
-                [ -f "$font_file" ] || continue
-                local fname=$(basename "$font_file")
+            for font_file in "$extract_dir"/*.{ttf,ttc,otf,zip}; do
+                [ -f "$font_file" ] 2>/dev/null || continue
+                local fname
+                fname=$(basename "$font_file")
                 
                 # 跳过已安装的
                 if [ -f "$FONT_DIR_USER/$fname" ] || ([ "$HAS_ROOT" = true ] && [ -f "$FONT_DIR_SYSTEM/$fname" ]); then
@@ -54,8 +53,8 @@ install_scenario() {
                     local zip_dir="$extract_dir/${fname%.zip}"
                     mkdir -p "$zip_dir"
                     if unzip -q -o "$font_file" -d "$zip_dir" 2>/dev/null; then
-                        for inner in "$zip_dir"/*.{ttf,otf} 2>/dev/null; do
-                            [ -f "$inner" ] || continue
+                        for inner in "$zip_dir"/*.{ttf,otf}; do
+                            [ -f "$inner" ] 2>/dev/null || continue
                             cp "$inner" "$FONT_DIR_USER/" 2>/dev/null
                             [ "$HAS_ROOT" = true ] && sudo cp "$inner" "$FONT_DIR_SYSTEM/" 2>/dev/null
                             ((count++))
@@ -102,7 +101,8 @@ install_scenario_fallback() {
         
         name=$(echo "$name" | xargs)
         path=$(echo "$path" | xargs)
-        local fname=$(basename "$path")
+        local fname
+        fname=$(basename "$path")
         
         # 检查是否已存在
         if [ -f "$FONT_DIR_USER/$fname" ] || ([ "$HAS_ROOT" = true ] && [ -f "$FONT_DIR_SYSTEM/$fname" ]); then
