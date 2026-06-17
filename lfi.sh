@@ -7,6 +7,17 @@
 #     bash <(curl -sL https://raw.githubusercontent.com/sinyche/linux-font-installer/main/lfi.sh)
 # ==============================================================
 
+# -------- 自举：如果是管道运行，先保存到临时文件再执行 --------
+if [ ! -f "$0" ] || [[ "$0" == /dev/fd/* ]] || [[ "$0" == /proc/self/fd/* ]]; then
+    # 下载完整版LFI到临时文件
+    SELF="/tmp/lfi-self-$$.sh"
+    if curl -fsSL "https://raw.githubusercontent.com/${REPO}/${BRANCH}/lfi.sh" -o "$SELF" 2>/dev/null; then
+        chmod +x "$SELF"
+        exec bash "$SELF" "$@"
+        exit
+    fi
+fi
+
 set -e
 
 # -------- 配置 --------
@@ -53,11 +64,14 @@ dl_module() {
     local target="$MODULE_DIR/$name"
     
     mkdir -p "$MODULE_DIR"
-    if ! curl -fsSL "$url" -o "$target" 2>/dev/null; then
+    curl -fsSL "$url" -o "$target" 2>/dev/null || {
+        log_error "下载模块失败: $name"
+        exit 1
+    }
+    source "$target" 2>/dev/null || {
         log_error "加载模块失败: $name"
         exit 1
-    fi
-    source "$target"
+    }
 }
 
 # -------- 系统检测 --------
