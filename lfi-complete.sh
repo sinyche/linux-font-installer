@@ -923,43 +923,68 @@ extract_from_dual_boot() {
 
     local idx=0
     for dev in "${part_list[@]}"; do
-        local tag="  "
+        local menu_num="  "
         local marker=""
         if [ "${part_has_fonts[$idx]}" = "true" ]; then
             local fcount="${part_font_info[$idx]}"
-            marker=" ${GREEN}✓ 含 ${fcount} 个可用字体${NC}"
+            marker=" ${GREEN}✓${NC} ${fcount} 个可用字体"
             if [ "$idx" -eq "$best_index" ]; then
-                tag="${GREEN}▶${NC}"
+                menu_num="${GREEN}[$((idx+1))]${NC}"
                 marker="${marker} ${GREEN}★ 推荐${NC}"
+            else
+                menu_num=" ${CYAN}[$((idx+1))]${NC}"
             fi
         else
-            marker=" ${YELLOW}✗ 未找到 Fonts 目录${NC}"
+            menu_num=" ${CYAN}[$((idx+1))]${NC}"
+            marker=" ${YELLOW}✗${NC} 未找到 Fonts 目录"
         fi
-        echo -e "  ${tag} ${BLUE}$dev${NC}  (${part_labels[$idx]})${marker}"
+        # 显示简短信息
+        local dev_short=$(basename "$dev")
+        local label_short="${part_labels[$idx]}"
+        echo -e "  ${menu_num} ${BLUE}${dev_short}${NC}  ${label_short}  ${marker}"
         ((idx++))
     done
 
     echo ""
     echo -e "  ${BOLD}可用字体格式:${NC} .ttf / .ttc / .otf"
     echo ""
-    echo -ne "  ${BOLD}输入分区设备名（如 ${WHITE}${part_list[0]}${NC}）或回车自动选择推荐分区: ${NC}"
-    read -r part_dev
+    echo -ne "  ${BOLD}请选择 [1-${#part_list[@]}]，回车默认推荐: ${NC}"
+    read -r part_choice
 
-    if [ -z "$part_dev" ]; then
+    part_dev=""
+    if [ -z "$part_choice" ]; then
+        # 回车——选推荐分区
         if [ "$best_index" -ge 0 ]; then
             part_dev="${part_list[$best_index]}"
-            echo -e "  ${GREEN}自动选择推荐分区: ${part_dev}${NC}"
+            echo -e "  ${GREEN}自动选择推荐分区: $(basename $part_dev)${NC}"
         else
-            part_dev=$(echo "$ntfs_parts" | head -1 | awk '{print $1}')
+            part_dev="${part_list[0]}"
+            echo -e "  ${YELLOW}未找到含字体的分区，默认选择第一个${NC}"
         fi
+    elif [[ "$part_choice" =~ ^[0-9]+$ ]]; then
+        # 数字序号
+        local num=$((part_choice - 1))
+        if [ "$num" -ge 0 ] && [ "$num" -lt "${#part_list[@]}" ]; then
+            part_dev="${part_list[$num]}"
+            echo -e "  ${GREEN}已选择: $(basename $part_dev)${NC}"
+        else
+            log_warn "无效序号: $part_choice，默认选择推荐分区"
+            if [ "$best_index" -ge 0 ]; then
+                part_dev="${part_list[$best_index]}"
+            else
+                part_dev="${part_list[0]}"
+            fi
+        fi
+    else
+        # 可能是设备名直接输入
+        part_dev="$part_choice"
+        echo -e "  ${GREEN}已选择: $(basename $part_dev)${NC}"
     fi
 
     # 检查分区是否已挂载
     local mount_point=""
     mount_point=$(lsblk -no MOUNTPOINT "$part_dev" 2>/dev/null | head -1 | xargs)
     local needs_unmount=false
-
-    echo "DEBUG: mount_point=[$mount_point] part_dev=[$part_dev]" >&2
 
     if [ -z "$mount_point" ] || [ "$mount_point" = "" ]; then
         mount_point="/tmp/lfi-win-$$"
