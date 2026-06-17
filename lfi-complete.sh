@@ -60,13 +60,10 @@ DOWNLOAD_DIR="${LFI_ROOT}/downloads"
 log_info()  { echo -e "${GREEN}[✓]${NC} $1"; }
 log_warn()  { echo -e "${YELLOW}[!]${NC} $1"; }
 log_error() { echo -e "${RED}[✗]${NC} $1"; }
-log_step()  { echo -e "
-${BLUE}━━━ $1 ━━━${NC}"; }
+log_step()  { echo -e "\n${BLUE}━━━ $1 ━━━${NC}"; }
 
 # -------- URL读取 --------
-github_raw() {
-    echo "https://raw.githubusercontent.com/${REPO}/${BRANCH}/$1"
-}
+github_raw() { echo "https://raw.githubusercontent.com/${REPO}/${BRANCH}/$1"; }
 
 # -------- 系统检测 --------
 detect_system() {
@@ -159,7 +156,6 @@ prepare_env() {
         echo ""
     fi
 }
-
 
 # -------- 内联模块 --------
 
@@ -1239,18 +1235,18 @@ _install_scenario() {
             echo -e "  ${BLUE}⟳${NC} 正在安装字体文件..."
             # 安装所有字体文件
             local count=0
-            local current=0
-            # 先收集文件列表
-            local font_files=()
+            local skipped=0
+            # 收集文件列表（用find直接输出到临时文件再读取，避免进程替换问题）
+            local flist="$DOWNLOAD_DIR/fontlist-$$.txt"
+            find "$extract_dir" \( -name "*.ttf" -o -name "*.ttc" -o -name "*.otf" -o -name "*.zip" \) -print0 2>/dev/null > "$flist"
+            local total=0
             while IFS= read -r -d '' f; do
-                font_files+=("$f")
-            done < <(find "$extract_dir" \( -name "*.ttf" -o -name "*.ttc" -o -name "*.otf" -o -name "*.zip" \) -print0 2>/dev/null)
-            local total=${#font_files[@]}
+                ((total++))
+            done < "$flist"
             [ "$total" -eq 0 ] && total=1
             
             local current=0
-            local skipped=0
-            for font_file in "${font_files[@]}"; do
+            while IFS= read -r -d '' font_file; do
                 ((current++))
                 local fname
                 fname=$(basename "$font_file")
@@ -1283,7 +1279,8 @@ _install_scenario() {
                 fi
                 # 显示进度
                 echo -ne "\r    安装: ${current}/${total}" 
-            done
+            done < "$flist"
+            rm -f "$flist" 2>/dev/null
             echo ""
             
             local result="安装了 ${BLUE}${count}${NC} 个"
