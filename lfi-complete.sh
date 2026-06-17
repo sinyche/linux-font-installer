@@ -1631,7 +1631,7 @@ show_main_menu() {
     
     echo -e "  ${BOLD}请选择使用场景：${NC}\n"
     echo -e "  ${CYAN}[1]${NC}  🀄  ${BOLD}中文用户必备${NC}"
-    echo -e "      ${WHITE}开源中文字体 + 办公文档配置${NC}\n"
+    echo -e "      ${WHITE}开源中文 + 办公常用字体${NC}\n"
     echo -e "  ${CYAN}[2]${NC}  💻  ${BOLD}编程开发${NC}"
     echo -e "      ${WHITE}JetBrains Mono / Fira Code / Cascadia Code / Nerd Fonts${NC}\n"
     echo -e "  ${CYAN}[3]${NC}  🎨  ${BOLD}设计师 / 创意场景${NC}"
