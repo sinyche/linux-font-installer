@@ -1631,24 +1631,22 @@ show_main_menu() {
     
     echo -e "  ${BOLD}请选择使用场景：${NC}\n"
     echo -e "  ${CYAN}[1]${NC}  🀄  ${BOLD}中文用户必备${NC}"
-    echo -e "      ${WHITE}霞鹜文楷 / 得意黑 / 思源系列 / 开源中文字体${NC}\n"
-    echo -e "  ${CYAN}[2]${NC}  📋  ${BOLD}政务公文配置${NC}"
-    echo -e "      ${WHITE}配置方正小标宋/仿宋/楷体映射 / WPS字体修复 / 优先级${NC}\n"
-    echo -e "  ${CYAN}[3]${NC}  💻  ${BOLD}编程开发${NC}"
+    echo -e "      ${WHITE}开源中文字体 + 办公文档配置${NC}\n"
+    echo -e "  ${CYAN}[2]${NC}  💻  ${BOLD}编程开发${NC}"
     echo -e "      ${WHITE}JetBrains Mono / Fira Code / Cascadia Code / Nerd Fonts${NC}\n"
-    echo -e "  ${CYAN}[4]${NC}  🎨  ${BOLD}设计师 / 创意场景${NC}"
+    echo -e "  ${CYAN}[3]${NC}  🎨  ${BOLD}设计师 / 创意场景${NC}"
     echo -e "      ${WHITE}免费可商用字体合集${NC}\n"
-    echo -e "  ${CYAN}[5]${NC}  📦  ${BOLD}全部安装（推荐）${NC}\n"
+    echo -e "  ${CYAN}[4]${NC}  📦  ${BOLD}全部安装（推荐）${NC}\n"
     echo -e "  ${YELLOW}━━━━ 补充功能 ━━━━${NC}\n"
-    echo -e "  ${CYAN}[6]${NC}  🪟  ${BOLD}安装 Windows 字体${NC}"
+    echo -e "  ${CYAN}[5]${NC}  🪟  ${BOLD}安装 Windows 字体${NC}"
     echo -e "      ${WHITE}从双系统/Wine/ISO/U盘提取，或全盘搜索${NC}\n"
-    echo -e "  ${CYAN}[7]${NC}  ⚡  ${BOLD}仅安装开源替代方案${NC}"
+    echo -e "  ${CYAN}[6]${NC}  ⚡  ${BOLD}仅安装开源替代方案${NC}"
     echo -e "      ${WHITE}用开源字体替代Windows商业字体，无需Windows也可用${NC}\n"
-    echo -e "  ${CYAN}[8]${NC}  🔧  ${BOLD}配置 fontconfig 映射${NC}"
+    echo -e "  ${CYAN}[7]${NC}  🔧  ${BOLD}配置 fontconfig 映射${NC}"
     echo -e "      ${WHITE}修复WPS乱码 / 设置字体优先级 / 配置别名${NC}\n"
     echo -e "  ${YELLOW}━━━━ 工具 ━━━━${NC}\n"
-    echo -e "  ${CYAN}[9]${NC}  🔍  ${BOLD}查看已安装字体${NC}"
-    echo -e "  ${CYAN}[0]${NC}  🗑️   ${BOLD}卸载 / 重置字体${NC}"
+    echo -e "  ${CYAN}[8]${NC}  🔍  ${BOLD}查看已安装字体${NC}"
+    echo -e "  ${CYAN}[9]${NC}  🗑️   ${BOLD}卸载 / 重置字体${NC}"
     echo -e "  ${CYAN}[i]${NC}  ℹ️   ${BOLD}关于 / 许可说明${NC}"
     echo -e "  ${CYAN}[q]${NC}  ❌  ${BOLD}退出${NC}"
     echo ""
@@ -1662,16 +1660,18 @@ menu_loop() {
         read -r choice
         
         case "$choice" in
-            1) install_scenario "zh-cn" ;;
-            2) configure_office_fonts ;;
-            3) install_scenario "coding" ;;
-            4) install_scenario "design" ;;
-            5) install_all ;;
-            6) extract_windows_fonts ;;
-            7) install_opensource_alternative ;;
-            8) configure_fontconfig ;;
-            9) show_installed_fonts ;;
-            0) uninstall_fonts ;;
+            1)
+                install_scenario "zh-cn"
+                install_scenario "office"
+                ;;
+            2) install_scenario "coding" ;;
+            3) install_scenario "design" ;;
+            4) install_all ;;
+            5) extract_windows_fonts ;;
+            6) install_opensource_alternative ;;
+            7) configure_fontconfig ;;
+            8) show_installed_fonts ;;
+            9) uninstall_fonts ;;
             i|I) show_about ;;
             q|Q) 
                 echo -e "\n${GREEN}感谢使用 LFI！${NC}"
@@ -1780,7 +1780,6 @@ configure_office_fonts() {
 install_all() {
     log_step "全部安装"
     install_scenario "zh-cn"
-    install_scenario "office"
     install_scenario "coding"
     install_scenario "design"
     log_info "全部场景安装完成！"
