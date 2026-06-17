@@ -39,11 +39,16 @@ install_scenario() {
             echo -e "  ${BLUE}⟳${NC} 正在安装字体文件..."
             # 安装所有字体文件
             local count=0
-            local total=$(find "$extract_dir" \( -name "*.ttf" -o -name "*.ttc" -o -name "*.otf" -o -name "*.zip" \) 2>/dev/null | wc -l)
-            [ "$total" -eq 0 ] && total=1
             local current=0
-            for font_file in "$extract_dir"/*.{ttf,ttc,otf,zip}; do
-                [ -f "$font_file" ] 2>/dev/null || continue
+            # 先收集文件列表
+            local font_files=()
+            while IFS= read -r -d '' f; do
+                font_files+=("$f")
+            done < <(find "$extract_dir" \( -name "*.ttf" -o -name "*.ttc" -o -name "*.otf" -o -name "*.zip" \) -print0 2>/dev/null)
+            local total=${#font_files[@]}
+            [ "$total" -eq 0 ] && total=1
+            
+            for font_file in "${font_files[@]}"; do
                 local fname
                 fname=$(basename "$font_file")
                 
