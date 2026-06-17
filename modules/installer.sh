@@ -37,25 +37,21 @@ _install_scenario() {
             echo -e "${GREEN}完成${NC}"
             
             echo -e "  ${BLUE}⟳${NC} 正在安装字体文件..."
-            # 安装所有字体文件
+            # 安装所有字体文件 - 最简glob方式
             local count=0
             local skipped=0
-            # 收集文件列表（用find直接输出到临时文件再读取，避免进程替换问题）
-            local flist="$DOWNLOAD_DIR/fontlist-$$.txt"
-            find "$extract_dir" \( -name "*.ttf" -o -name "*.ttc" -o -name "*.otf" -o -name "*.zip" \) -print0 2>/dev/null > "$flist"
+            local current=0
             local total=0
-            while IFS= read -r -d '' f; do
-                ((total++))
-            done < "$flist"
+            for f in "$extract_dir"/*.ttf "$extract_dir"/*.ttc "$extract_dir"/*.otf "$extract_dir"/*.zip; do
+                [ -f "$f" ] && ((total++))
+            done
             [ "$total" -eq 0 ] && total=1
             
-            local current=0
-            while IFS= read -r -d '' font_file; do
+            for font_file in "$extract_dir"/*.ttf "$extract_dir"/*.ttc "$extract_dir"/*.otf "$extract_dir"/*.zip; do
+                [ -f "$font_file" ] || continue
                 ((current++))
                 local fname
                 fname=$(basename "$font_file")
-                
-                # 跳过已安装的
                 if [ -f "$FONT_DIR_USER/$fname" ] || ([ "$HAS_ROOT" = true ] && [ -f "$FONT_DIR_SYSTEM/$fname" ]); then
                     ((skipped++))
                     # 显示进度（每5个或最后一个才刷新）
@@ -71,11 +67,12 @@ _install_scenario() {
                     mkdir -p "$zip_dir"
                     if unzip -q -o "$font_file" -d "$zip_dir" 2>/dev/null; then
                         local zcount=0
-                        while IFS= read -r -d '' inner; do
+                        for inner in "$zip_dir"/*.ttf "$zip_dir"/*.otf; do
+                            [ -f "$inner" ] || continue
                             cp "$inner" "$FONT_DIR_USER/" 2>/dev/null
                             [ "$HAS_ROOT" = true ] && sudo cp "$inner" "$FONT_DIR_SYSTEM/" 2>/dev/null
                             ((zcount++))
-                        done < <(find "$zip_dir" \( -name "*.ttf" -o -name "*.otf" \) -print0 2>/dev/null)
+                        done
                         ((count+=zcount))
                     fi
                 else
@@ -83,12 +80,11 @@ _install_scenario() {
                     [ "$HAS_ROOT" = true ] && sudo cp "$font_file" "$FONT_DIR_SYSTEM/" 2>/dev/null
                     ((count++))
                 fi
-                # 显示进度（每5个或最后一个才刷新，避免缓冲问题）
+                # 显示进度（每5个或最后一个才刷新）
                 if [ $((current % 5)) -eq 0 ] || [ "$current" -eq "$total" ]; then
                     echo -e "\r    安装: ${current}/${total}"
                 fi
-            done < "$flist"
-            rm -f "$flist" 2>/dev/null
+            done
             echo ""
             
             local result="安装了 ${BLUE}${count}${NC} 个"
