@@ -1632,8 +1632,8 @@ show_main_menu() {
     echo -e "  ${BOLD}请选择使用场景：${NC}\n"
     echo -e "  ${CYAN}[1]${NC}  🀄  ${BOLD}中文用户必备${NC}"
     echo -e "      ${WHITE}霞鹜文楷 / 得意黑 / 思源系列 / 开源中文字体${NC}\n"
-    echo -e "  ${CYAN}[2]${NC}  📄  ${BOLD}办公文档（WPS / 政务公文）${NC}"
-    echo -e "      ${WHITE}仿宋/楷体开源替代 / WPS符号字体修复 / fontconfig映射${NC}\n"
+    echo -e "  ${CYAN}[2]${NC}  📋  ${BOLD}政务公文配置${NC}"
+    echo -e "      ${WHITE}配置方正小标宋/仿宋/楷体映射 / WPS字体修复 / 优先级${NC}\n"
     echo -e "  ${CYAN}[3]${NC}  💻  ${BOLD}编程开发${NC}"
     echo -e "      ${WHITE}JetBrains Mono / Fira Code / Cascadia Code / Nerd Fonts${NC}\n"
     echo -e "  ${CYAN}[4]${NC}  🎨  ${BOLD}设计师 / 创意场景${NC}"
@@ -1663,7 +1663,7 @@ menu_loop() {
         
         case "$choice" in
             1) install_scenario "zh-cn" ;;
-            2) install_scenario "office" ;;
+            2) configure_office_fonts ;;
             3) install_scenario "coding" ;;
             4) install_scenario "design" ;;
             5) install_all ;;
@@ -1706,6 +1706,75 @@ install_scenario() {
     else
         log_error "内部错误: installer.sh 未加载"
     fi
+}
+
+# -------- 政务公文配置 --------
+configure_office_fonts() {
+    log_step "政务公文配置"
+    
+    echo ""
+    echo -e "  ${BOLD}本功能自动完成以下操作：${NC}"
+    echo -e "  ${CYAN}①${NC} 从 Windows 分区提取公文字体（方正小标宋、仿宋、楷体、黑体）"
+    echo -e "  ${CYAN}②${NC} 配置 fontconfig 别名（WPS 乱码修复 + 字体优先级 + 开源替代）"
+    echo ""
+    
+    # 检查是否有已挂载的 Windows 分区
+    local win_found=false
+    local ntfs_parts
+    ntfs_parts=$(lsblk -o NAME,FSTYPE,LABEL,SIZE -pl 2>/dev/null | grep "ntfs" | grep -v "loop")
+    
+    if [ -n "$ntfs_parts" ]; then
+        while IFS= read -r line; do
+            [ -z "$line" ] && continue
+            local dev
+            dev=$(echo "$line" | awk '{print $1}')
+            local mnt
+            mnt=$(lsblk -no MOUNTPOINT "$dev" 2>/dev/null | head -1 | xargs)
+            
+            if [ -n "$mnt" ] && [ "$mnt" != "" ]; then
+                local font_dir=""
+                for d in "$mnt/Windows/Fonts" "$mnt"/*/Windows/Fonts; do
+                    [ -d "$d" ] && font_dir="$d" && break
+                done
+                if [ -n "$font_dir" ]; then
+                    win_found=true
+                    echo -e "  ${GREEN}✓${NC} 检测到 Windows 分区: ${dev}"
+                    
+                    echo ""
+                    echo -e "  ${BOLD}提取公文字体...${NC}"
+                    local gov_count=0
+                    for target in "fzxbs.ttf" "fzxbsj.ttf" "FZXiaoBiaoSong.ttf" "FZXiaoBiaoSong-B05S.ttf" "FZXBSJW.ttf" "simfang.ttf" "simkai.ttf" "simhei.ttf" "simsun.ttc" "msyh.ttc"; do
+                        local found_file
+                        found_file=$(find "$font_dir" -maxdepth 1 -name "$target" -type f 2>/dev/null | head -1)
+                        if [ -n "$found_file" ]; then
+                            cp "$found_file" "$FONT_DIR_USER/" 2>/dev/null || true
+                            [ "$HAS_ROOT" = true ] && sudo cp "$found_file" "$FONT_DIR_SYSTEM/" 2>/dev/null || true
+                            echo -e "    ${GREEN}✓${NC} $(basename $found_file)"
+                            ((gov_count++))
+                        fi
+                    done
+                    echo -e "  ${GREEN}已提取 ${gov_count} 个公文字体文件${NC}"
+                    break
+                fi
+            fi
+        done <<< "$ntfs_parts"
+    fi
+    
+    if [ "$win_found" = false ]; then
+        echo -e "  ${YELLOW}⚠${NC} 未检测到 Windows 分区，跳过字体提取"
+        echo -e "  ${YELLOW}⚠${NC} fontconfig 配置将仅使用已安装的开源字体"
+    fi
+    
+    # 配置三部曲
+    echo ""
+    echo -e "  ${BOLD}配置 fontconfig 映射...${NC}"
+    echo ""
+    configure_font_priority
+    fix_wps_fonts
+    configure_fontconfig_alias
+    
+    refresh_cache
+    log_info "政务公文配置完成！"
 }
 
 install_all() {
