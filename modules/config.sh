@@ -4,7 +4,7 @@
 # ==============================================================
 
 # -------- 主入口 --------
-configure_fontconfig() {
+_configure_fontconfig() {
     log_step "fontconfig 配置"
     
     echo ""

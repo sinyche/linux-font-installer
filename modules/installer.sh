@@ -4,7 +4,7 @@
 # ==============================================================
 
 # -------- 安装一个场景的字体 --------
-install_scenario() {
+_install_scenario() {
     local scenario="$1"
     local pack_url="https://github.com/${REPO}/releases/download/${LFI_RELEASE}/lfi-fonts-${scenario}-v1.tar.gz"
     local list_url=$(github_raw "fonts/${scenario}/list.txt")

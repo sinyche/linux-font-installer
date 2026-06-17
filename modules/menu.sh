@@ -110,10 +110,13 @@ menu_loop() {
     done
 }
 
-# -------- 安装场景（占位，由installer.sh覆盖） --------
+# -------- 安装场景（代理函数，转发到模块的真实实现） --------
 install_scenario() {
-    # 实际实现在 installer.sh 中
-    log_error "内部错误: installer.sh 未加载"
+    if declare -f _install_scenario > /dev/null 2>&1; then
+        _install_scenario "$@"
+    else
+        log_error "内部错误: installer.sh 未加载"
+    fi
 }
 
 install_all() {
@@ -126,7 +129,11 @@ install_all() {
 }
 
 extract_windows_fonts() {
-    log_error "内部错误: extract-win.sh 未加载"
+    if declare -f _extract_windows_fonts > /dev/null 2>&1; then
+        _extract_windows_fonts
+    else
+        log_error "内部错误: extract-win.sh 未加载"
+    fi
 }
 
 install_opensource_alternative() {
@@ -138,7 +145,11 @@ install_opensource_alternative() {
 }
 
 configure_fontconfig() {
-    log_error "内部错误: config.sh 未加载"
+    if declare -f _configure_fontconfig > /dev/null 2>&1; then
+        _configure_fontconfig
+    else
+        log_error "内部错误: config.sh 未加载"
+    fi
 }
 
 show_installed_fonts() {

@@ -26,7 +26,7 @@ declare -A WIN_FONT_MAP=(
 )
 
 # -------- 主入口 --------
-extract_windows_fonts() {
+_extract_windows_fonts() {
     log_step "安装 Windows 字体"
     
     echo ""
