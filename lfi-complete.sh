@@ -1612,8 +1612,12 @@ verify_installation() {
 print_header() {
     local title="$1"
     local color="${2:-$BLUE}"
+    local width=$(( ${#title} + 6 ))
+    [ "$width" -lt 30 ] && width=30
     echo ""
-    echo -e "  ${color}━━━ ${BOLD}${WHITE}${title}${NC}${color} ━━━${NC}"
+    echo -e "     ${color}╔$(printf '═%.0s' $(seq 1 $((width-2))))╗${NC}"
+    echo -e "       ${BOLD}${WHITE}${title}${NC}"
+    echo -e "     ${color}╚$(printf '═%.0s' $(seq 1 $((width-2))))╝${NC}"
     echo ""
 }
 
