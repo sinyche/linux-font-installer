@@ -13,9 +13,16 @@ BRANCH="main"
 LFI_VERSION="1.0.0"
 LFI_RELEASE="v1.0.0"
 
-# -------- 自举：如果是管道运行，先保存到临时文件再执行 --------
+# -------- 自举：如果是管道运行，先下载完整版再执行 --------
 if [ ! -f "$0" ] || [[ "$0" == /dev/fd/* ]] || [[ "$0" == /proc/self/fd/* ]]; then
     SELF="/tmp/lfi-self-$$.sh"
+    # 从Release下载完整版（不受CDN缓存影响）
+    if curl -fsSL "https://github.com/${REPO}/releases/download/${LFI_RELEASE}/lfi-complete.sh" -o "$SELF" 2>/dev/null; then
+        chmod +x "$SELF"
+        exec bash "$SELF" "$@"
+        exit
+    fi
+    # 回退：从raw下载
     curl -fsSL "https://raw.githubusercontent.com/${REPO}/${BRANCH}/lfi.sh" -o "$SELF" 2>/dev/null && {
         chmod +x "$SELF"
         exec bash "$SELF" "$@"
@@ -59,17 +66,25 @@ github_raw() {
 
 dl_module() {
     local name="$1"
-    local url=$(github_raw "modules/$name")
     local target="$MODULE_DIR/$name"
     
     mkdir -p "$MODULE_DIR"
-    curl -fsSL "$url" -o "$target" 2>/dev/null || {
-        log_error "下载模块失败: $name"
-        exit 1
-    }
-    source "$target" 2>/dev/null || {
-        log_error "加载模块失败: $name"
-        exit 1
+    # 如果目录中没有，从完整版中提取
+    # 优先从本地临时文件加载
+    # 下载完整版
+    local complete_url="https://github.com/${REPO}/releases/download/${LFI_RELEASE}/lfi-complete.sh"
+    curl -fsSL "$complete_url" -o "$MODULE_DIR/lfi-complete.sh" 2>/dev/null || {
+        # 回退：单独下载模块
+        local url=$(github_raw "modules/$name")
+        curl -fsSL "$url" -o "$target" 2>/dev/null || {
+            log_error "下载模块失败: $name"
+            exit 1
+        }
+        source "$target" 2>/dev/null || {
+            log_error "加载模块失败: $name"
+            exit 1
+        }
+        return
     }
 }
 
