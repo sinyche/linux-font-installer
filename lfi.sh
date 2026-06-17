@@ -7,24 +7,23 @@
 #     bash <(curl -sL https://raw.githubusercontent.com/sinyche/linux-font-installer/main/lfi.sh)
 # ==============================================================
 
-# -------- 自举：如果是管道运行，先保存到临时文件再执行 --------
-if [ ! -f "$0" ] || [[ "$0" == /dev/fd/* ]] || [[ "$0" == /proc/self/fd/* ]]; then
-    # 下载完整版LFI到临时文件
-    SELF="/tmp/lfi-self-$$.sh"
-    if curl -fsSL "https://raw.githubusercontent.com/${REPO}/${BRANCH}/lfi.sh" -o "$SELF" 2>/dev/null; then
-        chmod +x "$SELF"
-        exec bash "$SELF" "$@"
-        exit
-    fi
-fi
-
-set -e
-
 # -------- 配置 --------
 REPO="sinyche/linux-font-installer"
 BRANCH="main"
 LFI_VERSION="1.0.0"
 LFI_RELEASE="v1.0.0"
+
+# -------- 自举：如果是管道运行，先保存到临时文件再执行 --------
+if [ ! -f "$0" ] || [[ "$0" == /dev/fd/* ]] || [[ "$0" == /proc/self/fd/* ]]; then
+    SELF="/tmp/lfi-self-$$.sh"
+    curl -fsSL "https://raw.githubusercontent.com/${REPO}/${BRANCH}/lfi.sh" -o "$SELF" 2>/dev/null && {
+        chmod +x "$SELF"
+        exec bash "$SELF" "$@"
+        exit
+    }
+fi
+
+set -e
 
 # -------- 颜色 --------
 RED='\033[0;31m'
