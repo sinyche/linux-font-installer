@@ -48,13 +48,18 @@ _install_scenario() {
             local total=${#font_files[@]}
             [ "$total" -eq 0 ] && total=1
             
+            local current=0
+            local skipped=0
             for font_file in "${font_files[@]}"; do
+                ((current++))
                 local fname
                 fname=$(basename "$font_file")
                 
                 # 跳过已安装的
                 if [ -f "$FONT_DIR_USER/$fname" ] || ([ "$HAS_ROOT" = true ] && [ -f "$FONT_DIR_SYSTEM/$fname" ]); then
-                    ((current++))
+                    ((skipped++))
+                    # 显示进度（包括跳过的）
+                    echo -ne "\r    检查: ${current}/${total}" 
                     continue
                 fi
                 
@@ -76,13 +81,14 @@ _install_scenario() {
                     [ "$HAS_ROOT" = true ] && sudo cp "$font_file" "$FONT_DIR_SYSTEM/" 2>/dev/null
                     ((count++))
                 fi
-                ((current++))
                 # 显示进度
-                echo -ne "\r    进度: ${current}/${total}" 
+                echo -ne "\r    安装: ${current}/${total}" 
             done
             echo ""
             
-            echo -e "  ${GREEN}✓${NC} 安装了 ${BLUE}${count}${NC} 个字体文件"
+            local result="安装了 ${BLUE}${count}${NC} 个"
+            [ "$skipped" -gt 0 ] && result="${result}（${YELLOW}${skipped}${NC} 个已存在跳过）"
+            echo -e "  ${GREEN}✓${NC} ${result}"
         else
             echo -e "${RED}解压失败${NC}"
         fi
