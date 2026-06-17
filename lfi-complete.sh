@@ -829,7 +829,7 @@ extract_from_dual_boot() {
 
     # 查找所有NTFS分区
     local ntfs_parts
-    ntfs_parts=$(lsblk -o NAME,FSTYPE,LABEL,SIZE -p 2>/dev/null | grep "ntfs" | grep -v "loop")
+    ntfs_parts=$(lsblk -o NAME,FSTYPE,LABEL,SIZE -pl 2>/dev/null | grep "ntfs" | grep -v "loop")
 
     if [ -z "$ntfs_parts" ]; then
         echo ""
@@ -959,8 +959,10 @@ extract_from_dual_boot() {
     mount_point=$(lsblk -no MOUNTPOINT "$part_dev" 2>/dev/null | head -1 | xargs)
     local needs_unmount=false
 
+    echo "DEBUG: mount_point=[$mount_point] part_dev=[$part_dev]" >&2
+
     if [ -z "$mount_point" ] || [ "$mount_point" = "" ]; then
-        mount_point="/mnt/lfi-win-$$"
+        mount_point="/tmp/lfi-win-$$"
         mkdir -p "$mount_point"
         echo -ne "  ${BLUE}⟳${NC} 挂载中... "
         if ! mount_ntfs "$part_dev" "$mount_point"; then
