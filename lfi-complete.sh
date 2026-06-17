@@ -1250,52 +1250,46 @@ _install_scenario() {
             
             echo -e "  ${BLUE}⟳${NC} 正在安装字体文件..."
             # 安装所有字体文件 - 使用find代替glob（bash 5.3兼容）
-            local total=0
             local count=0
             local skipped=0
             local current=0
-            while IFS= read -r -d '' f; do
-                ((total++))
-            done < <(find "$extract_dir" \( -name "*.ttf" -o -name "*.ttc" -o -name "*.otf" -o -name "*.zip" \) -print0 2>/dev/null)
-            [ "$total" -eq 0 ] && total=1
+            local item_count=0
 
+            # 第一步：解压所有zip包
+            while IFS= read -r -d '' zip_file; do
+                local zname
+                zname=$(basename "$zip_file")
+                local zdir="$extract_dir/${zname%.zip}"
+                mkdir -p "$zdir"
+                unzip -q -o "$zip_file" -d "$zdir" 2>/dev/null || true
+            done < <(find "$extract_dir" -maxdepth 1 -name "*.zip" -print0 2>/dev/null)
+
+            # 第二步：统计所有实际字体文件数（含zip解压后的）
+            while IFS= read -r -d '' f; do
+                ((item_count++))
+            done < <(find "$extract_dir" \( -name "*.ttf" -o -name "*.ttc" -o -name "*.otf" \) -print0 2>/dev/null)
+            [ "$item_count" -eq 0 ] && item_count=1
+
+            # 第三步：安装所有字体文件，显示真实进度
+            local progress_label="安装"
             while IFS= read -r -d '' font_file; do
                 ((current++))
                 local fname
                 fname=$(basename "$font_file")
                 if [ -f "$FONT_DIR_USER/$fname" ] || ([ "$HAS_ROOT" = true ] && [ -f "$FONT_DIR_SYSTEM/$fname" ]); then
                     ((skipped++))
-                    # 显示进度（每5个或最后一个才刷新）
-                    if [ $((current % 5)) -eq 0 ] || [ "$current" -eq "$total" ]; then
-                        echo -e "\\r    检查: ${current}/${total}"
-                    fi
-                    continue
-                fi
-
-                # zip文件需要解压
-                if [[ "$fname" == *.zip ]]; then
-                    local zip_dir="$extract_dir/${fname%.zip}"
-                    mkdir -p "$zip_dir"
-                    if unzip -q -o "$font_file" -d "$zip_dir" 2>/dev/null; then
-                        local zcount=0
-                        while IFS= read -r -d '' inner; do
-                            [ -f "$inner" ] || continue
-                            cp "$inner" "$FONT_DIR_USER/" 2>/dev/null || true
-                            [ "$HAS_ROOT" = true ] && sudo cp "$inner" "$FONT_DIR_SYSTEM/" 2>/dev/null || true
-                            ((zcount++))
-                        done < <(find "$zip_dir" \( -name "*.ttf" -o -name "*.otf" \) -print0 2>/dev/null)
-                        ((count+=zcount))
-                    fi
+                    progress_label="检查"
                 else
                     cp "$font_file" "$FONT_DIR_USER/" 2>/dev/null || true
                     [ "$HAS_ROOT" = true ] && sudo cp "$font_file" "$FONT_DIR_SYSTEM/" 2>/dev/null || true
                     ((count++))
+                    progress_label="安装"
                 fi
                 # 显示进度（每5个或最后一个才刷新）
-                if [ $((current % 5)) -eq 0 ] || [ "$current" -eq "$total" ]; then
-                    echo -e "\\r    安装: ${current}/${total}"
+                if [ $((current % 5)) -eq 0 ] || [ "$current" -eq "$item_count" ]; then
+                    echo -e "\\r    ${progress_label}: ${current}/${item_count}"
                 fi
-            done < <(find "$extract_dir" \( -name "*.ttf" -o -name "*.ttc" -o -name "*.otf" -o -name "*.zip" \) -print0 2>/dev/null)
+            done < <(find "$extract_dir" \( -name "*.ttf" -o -name "*.ttc" -o -name "*.otf" \) -print0 2>/dev/null)
             echo ""
             
             local result="安装了 ${BLUE}${count}${NC} 个"
