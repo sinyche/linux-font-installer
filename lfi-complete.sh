@@ -689,7 +689,7 @@ fix_wps_fonts() {
                 wps_config="${wps_config}
   <alias>
     <family>${src}</family>
-    <accept><family>${dst}</family>
+    <accept><family>${dst}</family></accept>
   </alias>"
             else
                 echo -e "    ${RED}✗${NC} ${src} — 缺失，且替代字体 ${dst} 也未安装"
