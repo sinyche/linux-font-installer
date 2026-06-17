@@ -64,12 +64,11 @@ install_scenario() {
                     mkdir -p "$zip_dir"
                     if unzip -q -o "$font_file" -d "$zip_dir" 2>/dev/null; then
                         local zcount=0
-                        for inner in "$zip_dir"/*.{ttf,otf}; do
-                            [ -f "$inner" ] 2>/dev/null || continue
+                        while IFS= read -r -d '' inner; do
                             cp "$inner" "$FONT_DIR_USER/" 2>/dev/null
                             [ "$HAS_ROOT" = true ] && sudo cp "$inner" "$FONT_DIR_SYSTEM/" 2>/dev/null
                             ((zcount++))
-                        done
+                        done < <(find "$zip_dir" \( -name "*.ttf" -o -name "*.otf" \) -print0 2>/dev/null)
                         ((count+=zcount))
                     fi
                 else
