@@ -19,21 +19,29 @@ LFI_RELEASE="v1.0.0"
 # -------- 自举：如果是管道运行，先下载完整版再执行 --------
 if [ ! -f "$0" ] || [[ "$0" == /dev/fd/* ]] || [[ "$0" == /proc/self/fd/* ]]; then
     SELF="/tmp/lfi-self-$$.sh"
+    echo -e "  ${BLUE}⟳${NC} 正在下载 LFI 完整版..."
     # 从Release下载完整版（不受CDN缓存影响）
-    if curl -fsSL "https://github.com/${REPO}/releases/download/${LFI_RELEASE}/lfi-complete.sh" -o "$SELF" 2>/dev/null; then
+    if curl -fsSL --connect-timeout 10 --max-time 60 "https://github.com/${REPO}/releases/download/${LFI_RELEASE}/lfi-complete.sh" -o "$SELF" 2>/dev/null; then
         chmod +x "$SELF"
         exec bash "$SELF" "$@"
         exit
     fi
+    echo -e "  ${YELLOW}⚠ Release 下载失败，尝试 raw.githubusercontent.com ...${NC}"
     # 回退：从raw下载
-    curl -fsSL "https://raw.githubusercontent.com/${REPO}/${BRANCH}/lfi.sh" -o "$SELF" 2>/dev/null && {
+    curl -fsSL --connect-timeout 10 --max-time 60 "https://raw.githubusercontent.com/${REPO}/${BRANCH}/lfi.sh" -o "$SELF" 2>/dev/null && {
         chmod +x "$SELF"
         exec bash "$SELF" "$@"
         exit
     }
+    echo -e "  ${RED}[✗] 下载失败，请检查网络连接${NC}"
+    echo -e "  ${YELLOW}直接运行: bash lfi.sh${NC}"
+    exit 1
 fi
 
-set -e
+# NOT using set -e: we do explicit error handling throughout.
+# set -e causes silent exits on glob mismatches, grep -q failing to find
+# a match, ((count++)) returning 0, and other bash 5.3 edge cases that
+# make "正在安装字体文件..." appear to hang.
 
 # -------- 颜色 --------
 RED='\033[0;31m'
@@ -325,7 +333,8 @@ install_font_deps() {
     
     # 安装基础依赖
     for cmd in "$deps"; do
-        local pkg=$(echo "$cmd" | cut -d: -f1)
+        local pkg
+        pkg=$(echo "$cmd" | cut -d: -f1)
         echo -ne "  ${BLUE}⟳${NC} 安装 $pkg... "
         if pkg_install "$pkg"; then
             echo -e "${GREEN}完成${NC}"
@@ -336,8 +345,10 @@ install_font_deps() {
     
     # 安装可选字体包（失败不中断）
     for entry in "${font_pkgs[@]}"; do
-        local pkg=$(echo "$entry" | cut -d: -f1)
-        local alt=$(echo "$entry" | cut -d: -f2)
+        local pkg
+        pkg=$(echo "$entry" | cut -d: -f1)
+        local alt
+        alt=$(echo "$entry" | cut -d: -f2)
         echo -ne "  ${BLUE}⟳${NC} 安装 $pkg... "
         if pkg_install "$pkg" "$alt"; then
             echo -e "${GREEN}完成${NC}"
@@ -351,8 +362,10 @@ install_font_deps() {
         echo ""
         echo -e "  ${YELLOW}Arch 用户可通过 AUR 安装更多字体:${NC}"
         for entry in "${aur_packages[@]}"; do
-            local pkg=$(echo "$entry" | cut -d: -f1)
-            local desc=$(echo "$entry" | cut -d: -f2)
+        local pkg
+        pkg=$(echo "$entry" | cut -d: -f1)
+        local desc
+        desc=$(echo "$entry" | cut -d: -f2)
             echo -e "    ${WHITE}yay -S $pkg${NC} — $desc"
         done
     fi
@@ -932,7 +945,8 @@ extract_from_user_dir() {
         return
     fi
     
-    local count=$(find "$user_path" \( -name "*.ttf" -o -name "*.ttc" -o -name "*.otf" \) 2>/dev/null | wc -l)
+    local count
+    count=$(find "$user_path" \( -name "*.ttf" -o -name "*.ttc" -o -name "*.otf" \) 2>/dev/null | wc -l)
     if [ "$count" -eq 0 ]; then
         log_error "该目录下没有找到字体文件（.ttf/.ttc/.otf）"
         return
@@ -1016,7 +1030,8 @@ find_fonts_in_mounted_iso() {
     
     local found=0
     while IFS= read -r -d '' f; do
-        local fname=$(basename "$f")
+        local fname
+        fname=$(basename "$f")
         # 只提取我们需要的字体
         local matched=false
         for key in "${!WIN_FONT_MAP[@]}"; do
@@ -1075,7 +1090,8 @@ search_globally() {
         found_path=$(find / -maxdepth 6 -name "$target" -type f 2>/dev/null | head -1)
         
         if [ -n "$found_path" ]; then
-            local size=$(du -h "$found_path" | cut -f1)
+            local size
+            size=$(du -h "$found_path" | cut -f1)
             echo -e "  ${GREEN}✓${NC} ${target}  (${size})  ${WHITE}$found_path${NC}"
             install_single_font "$found_path"
             ((total++))
@@ -1146,7 +1162,8 @@ install_from_dir() {
 # -------- 安装单个字体文件 --------
 install_single_font() {
     local src="$1"
-    local fname=$(basename "$src")
+    local fname
+    fname=$(basename "$src")
     
     # 跳过已安装的
     [ -f "$FONT_DIR_USER/$fname" ] && return
@@ -1200,7 +1217,8 @@ show_windows_font_guide() {
 _install_scenario() {
     local scenario="$1"
     local pack_url="https://github.com/${REPO}/releases/download/${LFI_RELEASE}/lfi-fonts-${scenario}-v1.tar.gz"
-    local list_url=$(github_raw "fonts/${scenario}/list.txt")
+    local list_url
+    list_url=$(github_raw "fonts/${scenario}/list.txt")
     
     # 载入兼容模块（使用distro专用函数）
     detect_distro 2>/dev/null || true
@@ -1222,7 +1240,8 @@ _install_scenario() {
     
     # 从 Release 下载打包好的字体
     if curl -fSL --connect-timeout 15 --max-time 300 "$pack_url" -o "$pack_file" 2>/dev/null; then
-        local size=$(du -h "$pack_file" | cut -f1)
+        local size
+        size=$(du -h "$pack_file" | cut -f1)
         echo -e "${GREEN}${size}${NC}"
         
         echo -ne "  ${BLUE}⟳${NC} 解压中... "
@@ -1230,18 +1249,17 @@ _install_scenario() {
             echo -e "${GREEN}完成${NC}"
             
             echo -e "  ${BLUE}⟳${NC} 正在安装字体文件..."
-            # 安装所有字体文件 - 最简glob方式
+            # 安装所有字体文件 - 使用find代替glob（bash 5.3兼容）
+            local total=0
             local count=0
             local skipped=0
             local current=0
-            local total=0
-            for f in "$extract_dir"/*.ttf "$extract_dir"/*.ttc "$extract_dir"/*.otf "$extract_dir"/*.zip; do
-                [ -f "$f" ] && ((total++))
-            done
+            while IFS= read -r -d '' f; do
+                ((total++))
+            done < <(find "$extract_dir" \( -name "*.ttf" -o -name "*.ttc" -o -name "*.otf" -o -name "*.zip" \) -print0 2>/dev/null)
             [ "$total" -eq 0 ] && total=1
-            
-            for font_file in "$extract_dir"/*.ttf "$extract_dir"/*.ttc "$extract_dir"/*.otf "$extract_dir"/*.zip; do
-                [ -f "$font_file" ] || continue
+
+            while IFS= read -r -d '' font_file; do
                 ((current++))
                 local fname
                 fname=$(basename "$font_file")
@@ -1249,35 +1267,35 @@ _install_scenario() {
                     ((skipped++))
                     # 显示进度（每5个或最后一个才刷新）
                     if [ $((current % 5)) -eq 0 ] || [ "$current" -eq "$total" ]; then
-                        echo -e "\r    检查: ${current}/${total}"
+                        echo -e "\\r    检查: ${current}/${total}"
                     fi
                     continue
                 fi
-                
+
                 # zip文件需要解压
                 if [[ "$fname" == *.zip ]]; then
                     local zip_dir="$extract_dir/${fname%.zip}"
                     mkdir -p "$zip_dir"
                     if unzip -q -o "$font_file" -d "$zip_dir" 2>/dev/null; then
                         local zcount=0
-                        for inner in "$zip_dir"/*.ttf "$zip_dir"/*.otf; do
+                        while IFS= read -r -d '' inner; do
                             [ -f "$inner" ] || continue
-                            cp "$inner" "$FONT_DIR_USER/" 2>/dev/null
-                            [ "$HAS_ROOT" = true ] && sudo cp "$inner" "$FONT_DIR_SYSTEM/" 2>/dev/null
+                            cp "$inner" "$FONT_DIR_USER/" 2>/dev/null || true
+                            [ "$HAS_ROOT" = true ] && sudo cp "$inner" "$FONT_DIR_SYSTEM/" 2>/dev/null || true
                             ((zcount++))
-                        done
+                        done < <(find "$zip_dir" \( -name "*.ttf" -o -name "*.otf" \) -print0 2>/dev/null)
                         ((count+=zcount))
                     fi
                 else
-                    cp "$font_file" "$FONT_DIR_USER/" 2>/dev/null
-                    [ "$HAS_ROOT" = true ] && sudo cp "$font_file" "$FONT_DIR_SYSTEM/" 2>/dev/null
+                    cp "$font_file" "$FONT_DIR_USER/" 2>/dev/null || true
+                    [ "$HAS_ROOT" = true ] && sudo cp "$font_file" "$FONT_DIR_SYSTEM/" 2>/dev/null || true
                     ((count++))
                 fi
                 # 显示进度（每5个或最后一个才刷新）
                 if [ $((current % 5)) -eq 0 ] || [ "$current" -eq "$total" ]; then
-                    echo -e "\r    安装: ${current}/${total}"
+                    echo -e "\\r    安装: ${current}/${total}"
                 fi
-            done
+            done < <(find "$extract_dir" \( -name "*.ttf" -o -name "*.ttc" -o -name "*.otf" -o -name "*.zip" \) -print0 2>/dev/null)
             echo ""
             
             local result="安装了 ${BLUE}${count}${NC} 个"
@@ -1378,7 +1396,8 @@ print_header() {
     local title="$1"
     local color="${2:-$BLUE}"
     local width=56
-    local pad=$(( (width - ${#title} - 2) / 2 ))
+    local pad
+    pad=$(( (width - ${#title} - 2) / 2 ))
     
     echo ""
     echo -e "${color}   ╔$(printf '═%.0s' $(seq 1 $((width-2))))╗${NC}"
@@ -1525,8 +1544,10 @@ show_installed_fonts() {
     echo ""
     
     # 统计
-    local total=$(fc-list | wc -l)
-    local zh=$(fc-list :lang=zh 2>/dev/null | wc -l)
+    local total
+    total=$(fc-list | wc -l)
+    local zh
+    zh=$(fc-list :lang=zh 2>/dev/null | wc -l)
     
     echo -e "  ${BLUE}系统字体总数:${NC} ${BOLD}${total}${NC}"
     echo -e "  ${BLUE}中文字体数量:${NC} ${BOLD}${zh}${NC}"

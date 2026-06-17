@@ -16,21 +16,27 @@ LFI_RELEASE="v1.0.0"
 # -------- 自举：如果是管道运行，先下载完整版再执行 --------
 if [ ! -f "$0" ] || [[ "$0" == /dev/fd/* ]] || [[ "$0" == /proc/self/fd/* ]]; then
     SELF="/tmp/lfi-self-$$.sh"
+    echo "  ⟳ 正在下载 LFI 完整版..."
     # 从Release下载完整版（不受CDN缓存影响）
-    if curl -fsSL "https://github.com/${REPO}/releases/download/${LFI_RELEASE}/lfi-complete.sh" -o "$SELF" 2>/dev/null; then
+    if curl -fsSL --connect-timeout 10 --max-time 60 "https://github.com/${REPO}/releases/download/${LFI_RELEASE}/lfi-complete.sh" -o "$SELF" 2>/dev/null; then
         chmod +x "$SELF"
         exec bash "$SELF" "$@"
         exit
     fi
+    echo "  ⚠ Release 下载失败，尝试 raw.githubusercontent.com ..."
     # 回退：从raw下载
-    curl -fsSL "https://raw.githubusercontent.com/${REPO}/${BRANCH}/lfi.sh" -o "$SELF" 2>/dev/null && {
+    curl -fsSL --connect-timeout 10 --max-time 60 "https://raw.githubusercontent.com/${REPO}/${BRANCH}/lfi.sh" -o "$SELF" 2>/dev/null && {
         chmod +x "$SELF"
         exec bash "$SELF" "$@"
         exit
     }
+    echo "  [✗] 下载失败，请检查网络连接"
+    echo "  直接运行: bash lfi.sh"
+    exit 1
 fi
 
-set -e
+# NOT using set -e: causes silent exit on glob mismatch, grep -q with no match,
+# and other bash 5.3 edge cases. We use explicit error handling throughout.
 
 # -------- 颜色 --------
 RED='\033[0;31m'
