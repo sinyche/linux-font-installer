@@ -866,36 +866,52 @@ extract_from_dual_boot() {
         part_list+=("$dev")
         part_labels+=("$label")
 
-        # 尝试挂载
-        local mnt_point="$temp_mount/$$-$(basename "$dev")"
-        mkdir -p "$mnt_point"
+        # 先检查分区是否已挂载（通过 lsblk 获取挂载点）
+        local mnt_point=""
+        mnt_point=$(lsblk -no MOUNTPOINT "$dev" 2>/dev/null | head -1 | xargs)
+        local needs_unmount=false
 
-        if mount_ntfs "$dev" "$mnt_point" 2>/dev/null; then
-            local font_dir=""
-            for d in "$mnt_point/Windows/Fonts" "$mnt_point"/*/Windows/Fonts; do
-                [ -d "$d" ] && font_dir="$d" && break
-            done
-
-            if [ -n "$font_dir" ]; then
-                local zh_count
-                zh_count=$(find "$font_dir" \( -name "*.ttf" -o -name "*.ttc" -o -name "*.otf" \) 2>/dev/null | wc -l)
-                part_font_info+=("${zh_count}")
-                part_has_fonts+=("true")
-                if [ "$zh_count" -gt "$max_fonts" ]; then
-                    max_fonts=$zh_count
-                    best_index=${#part_list[@]}
-                    best_index=$((best_index - 1))
-                fi
-            else
-                part_font_info+=("0")
+        if [ -z "$mnt_point" ] || [ "$mnt_point" = "" ]; then
+            # 未挂载，临时挂载
+            mnt_point="$temp_mount/$$-$(basename "$dev")"
+            mkdir -p "$mnt_point"
+            if ! mount_ntfs "$dev" "$mnt_point" 2>/dev/null; then
+                part_font_info+=("?")
                 part_has_fonts+=("false")
+                rmdir "$mnt_point" 2>/dev/null || true
+                ((idx++))
+                continue
             fi
-            umount "$mnt_point" 2>/dev/null || true
+            needs_unmount=true
+        fi
+
+        # 查找 Fonts 目录
+        local font_dir=""
+        for d in "$mnt_point/Windows/Fonts" "$mnt_point"/*/Windows/Fonts; do
+            [ -d "$d" ] && font_dir="$d" && break
+        done
+
+        if [ -n "$font_dir" ]; then
+            local zh_count
+            zh_count=$(find "$font_dir" \( -name "*.ttf" -o -name "*.ttc" -o -name "*.otf" \) 2>/dev/null | wc -l)
+            zh_count=$(echo "$zh_count" | xargs)
+            part_font_info+=("${zh_count}")
+            part_has_fonts+=("true")
+            if [ "$zh_count" -gt "$max_fonts" ] 2>/dev/null; then
+                max_fonts=$zh_count
+                best_index=${#part_list[@]}
+                best_index=$((best_index - 1))
+            fi
         else
-            part_font_info+=("?")
+            part_font_info+=("0")
             part_has_fonts+=("false")
         fi
-        rmdir "$mnt_point" 2>/dev/null || true
+
+        if [ "$needs_unmount" = true ]; then
+            umount "$mnt_point" 2>/dev/null || true
+            rmdir "$mnt_point" 2>/dev/null || true
+        fi
+        ((idx++))
     done <<< "$ntfs_parts"
 
     rmdir "$temp_mount" 2>/dev/null || true
@@ -938,34 +954,46 @@ extract_from_dual_boot() {
         fi
     fi
 
-    local mount_point="/mnt/lfi-win-$$"
-    mkdir -p "$mount_point"
+    # 检查分区是否已挂载
+    local mount_point=""
+    mount_point=$(lsblk -no MOUNTPOINT "$part_dev" 2>/dev/null | head -1 | xargs)
+    local needs_unmount=false
 
-    echo -ne "  ${BLUE}⟳${NC} 挂载中... "
-    if mount_ntfs "$part_dev" "$mount_point"; then
-        echo -e "${GREEN}完成${NC}"
-
-        local font_dir=""
-        for d in "$mount_point/Windows/Fonts" "$mount_point"/*/Windows/Fonts; do
-            [ -d "$d" ] && font_dir="$d" && break
-        done
-
-        if [ -n "$font_dir" ]; then
-            install_from_dir "$font_dir"
-        else
-            log_error "未找到 Fonts 目录"
+    if [ -z "$mount_point" ] || [ "$mount_point" = "" ]; then
+        mount_point="/mnt/lfi-win-$$"
+        mkdir -p "$mount_point"
+        echo -ne "  ${BLUE}⟳${NC} 挂载中... "
+        if ! mount_ntfs "$part_dev" "$mount_point"; then
+            echo -e "${RED}失败${NC}"
+            log_error "挂载失败。Windows 可能未完全关机（启用了快速启动）"
+            echo ""
+            echo -e "  ${YELLOW}解决方法:${NC}"
+            echo -e "  1. 进入 Windows，以管理员身份运行命令提示符"
+            echo -e "  2. 执行: ${WHITE}powercfg /h off${NC}"
+            echo -e "  3. 完全关机后再试"
+            return
         fi
+        echo -e "${GREEN}完成${NC}"
+        needs_unmount=true
+    else
+        echo -e "  ${GREEN}✓ 分区已挂载于: ${mount_point}${NC}"
+    fi
 
+    local font_dir=""
+    for d in "$mount_point/Windows/Fonts" "$mount_point"/*/Windows/Fonts; do
+        [ -d "$d" ] && font_dir="$d" && break
+    done
+
+    if [ -n "$font_dir" ]; then
+        install_from_dir "$font_dir"
+    else
+        log_error "未找到 Fonts 目录"
+    fi
+
+    if [ "$needs_unmount" = true ]; then
         echo -ne "  ${BLUE}⟳${NC} 卸载分区... "
         umount "$mount_point" 2>/dev/null && echo -e "${GREEN}完成${NC}" || true
         rmdir "$mount_point" 2>/dev/null
-    else
-        log_error "挂载失败。Windows 可能未完全关机（启用了快速启动）"
-        echo ""
-        echo -e "  ${YELLOW}解决方法:${NC}"
-        echo -e "  1. 进入 Windows，以管理员身份运行命令提示符"
-        echo -e "  2. 执行: ${WHITE}powercfg /h off${NC}"
-        echo -e "  3. 完全关机后再试"
     fi
 }
 
