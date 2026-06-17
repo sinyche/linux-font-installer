@@ -826,11 +826,11 @@ _extract_windows_fonts() {
 # -------- ① 双系统提取 --------
 extract_from_dual_boot() {
     log_step "扫描 Windows 分区"
-    
+
     # 查找所有NTFS分区
     local ntfs_parts
     ntfs_parts=$(lsblk -o NAME,FSTYPE,LABEL,SIZE -p 2>/dev/null | grep "ntfs" | grep -v "loop")
-    
+
     if [ -z "$ntfs_parts" ]; then
         echo ""
         echo -e "  ${YELLOW}未找到 NTFS 分区。${NC}"
@@ -843,36 +843,119 @@ extract_from_dual_boot() {
         read -r
         return
     fi
-    
+
+    # 先尝试挂载每个NTFS分区，检查 /Windows/Fonts 是否存在并统计字体
+    local temp_mount="/tmp/lfi-scan-$$"
+    mkdir -p "$temp_mount"
+
+    local part_list=()        # 设备名
+    local part_labels=()      # 标签/大小信息
+    local part_font_info=()   # 字体统计信息
+    local part_has_fonts=()   # true/false 是否有Fonts目录
+    local best_index=-1       # 字体最多的分区索引
+
+    local max_fonts=0
+
+    while IFS= read -r line; do
+        [ -z "$line" ] && continue
+        local dev
+        dev=$(echo "$line" | awk '{print $1}')
+        local label
+        label=$(echo "$line" | awk '{print $3, $4}')
+
+        part_list+=("$dev")
+        part_labels+=("$label")
+
+        # 尝试挂载
+        local mnt_point="$temp_mount/$$-$(basename "$dev")"
+        mkdir -p "$mnt_point"
+
+        if mount_ntfs "$dev" "$mnt_point" 2>/dev/null; then
+            local font_dir=""
+            for d in "$mnt_point/Windows/Fonts" "$mnt_point"/*/Windows/Fonts; do
+                [ -d "$d" ] && font_dir="$d" && break
+            done
+
+            if [ -n "$font_dir" ]; then
+                local zh_count
+                zh_count=$(find "$font_dir" \( -name "*.ttf" -o -name "*.ttc" -o -name "*.otf" \) 2>/dev/null | wc -l)
+                part_font_info+=("${zh_count}")
+                part_has_fonts+=("true")
+                if [ "$zh_count" -gt "$max_fonts" ]; then
+                    max_fonts=$zh_count
+                    best_index=${#part_list[@]}
+                    best_index=$((best_index - 1))
+                fi
+            else
+                part_font_info+=("0")
+                part_has_fonts+=("false")
+            fi
+            umount "$mnt_point" 2>/dev/null || true
+        else
+            part_font_info+=("?")
+            part_has_fonts+=("false")
+        fi
+        rmdir "$mnt_point" 2>/dev/null || true
+    done <<< "$ntfs_parts"
+
+    rmdir "$temp_mount" 2>/dev/null || true
+
+    # 显示分区列表
     echo ""
-    echo -e "  ${GREEN}找到以下 NTFS 分区：${NC}"
-    echo "$ntfs_parts"
+    echo -e "  ${BOLD}找到以下 NTFS 分区：${NC}"
     echo ""
-    echo -ne "  ${BOLD}输入分区设备名（如 /dev/sda2）或回车自动选择第一个: ${NC}"
+
+    local idx=0
+    for dev in "${part_list[@]}"; do
+        local tag="  "
+        local marker=""
+        if [ "${part_has_fonts[$idx]}" = "true" ]; then
+            local fcount="${part_font_info[$idx]}"
+            marker=" ${GREEN}✓ 含 ${fcount} 个可用字体${NC}"
+            if [ "$idx" -eq "$best_index" ]; then
+                tag="${GREEN}▶${NC}"
+                marker="${marker} ${GREEN}★ 推荐${NC}"
+            fi
+        else
+            marker=" ${YELLOW}✗ 未找到 Fonts 目录${NC}"
+        fi
+        echo -e "  ${tag} ${BLUE}$dev${NC}  (${part_labels[$idx]})${marker}"
+        ((idx++))
+    done
+
+    echo ""
+    echo -e "  ${BOLD}可用字体格式:${NC} .ttf / .ttc / .otf"
+    echo ""
+    echo -ne "  ${BOLD}输入分区设备名（如 ${WHITE}${part_list[0]}${NC}）或回车自动选择推荐分区: ${NC}"
     read -r part_dev
-    
+
     if [ -z "$part_dev" ]; then
-        part_dev=$(echo "$ntfs_parts" | head -1 | awk '{print $1}')
+        if [ "$best_index" -ge 0 ]; then
+            part_dev="${part_list[$best_index]}"
+            echo -e "  ${GREEN}自动选择推荐分区: ${part_dev}${NC}"
+        else
+            part_dev=$(echo "$ntfs_parts" | head -1 | awk '{print $1}')
+        fi
     fi
-    
+
     local mount_point="/mnt/lfi-win-$$"
     mkdir -p "$mount_point"
-    
+
     echo -ne "  ${BLUE}⟳${NC} 挂载中... "
     if mount_ntfs "$part_dev" "$mount_point"; then
         echo -e "${GREEN}完成${NC}"
-        
-        local font_dir="$mount_point/Windows/Fonts"
-        if [ -d "$font_dir" ]; then
+
+        local font_dir=""
+        for d in "$mount_point/Windows/Fonts" "$mount_point"/*/Windows/Fonts; do
+            [ -d "$d" ] && font_dir="$d" && break
+        done
+
+        if [ -n "$font_dir" ]; then
             install_from_dir "$font_dir"
         else
-            # 尝试其他常见路径
-            for d in "$mount_point"/*/Windows/Fonts "$mount_point"/Windows/Fonts; do
-                [ -d "$d" ] && font_dir="$d" && break
-            done
-            [ -d "$font_dir" ] && install_from_dir "$font_dir" || log_error "未找到 Fonts 目录"
+            log_error "未找到 Fonts 目录"
         fi
-        
+
         echo -ne "  ${BLUE}⟳${NC} 卸载分区... "
         umount "$mount_point" 2>/dev/null && echo -e "${GREEN}完成${NC}" || true
         rmdir "$mount_point" 2>/dev/null
