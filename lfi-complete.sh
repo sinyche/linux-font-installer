@@ -669,6 +669,9 @@ fix_wps_fonts() {
         "仿宋_GB2312:FangSong"
         "楷体_GB2312:KaiTi"
         "小标宋:Noto Serif CJK SC Bold"
+        "方正小标宋:Noto Serif CJK SC Bold"
+        "方正小标宋简体:Noto Serif CJK SC Bold"
+        "FZXiaoBiaoSong:Noto Serif CJK SC Bold"
         "黑体:SimHei"
     )
     
@@ -759,6 +762,10 @@ configure_fontconfig_alias() {
         "楷体|LXGW WenKai|"
         "FangSong|Noto Serif CJK SC|"
         "仿宋|Noto Serif CJK SC|"
+        "方正小标宋|Noto Serif CJK SC Bold|"
+        "方正小标宋简体|Noto Serif CJK SC Bold|"
+        "小标宋|Noto Serif CJK SC Bold|"
+        "FZXiaoBiaoSong|Noto Serif CJK SC Bold|"
     )
     
     echo ""
@@ -842,6 +849,7 @@ declare -A WIN_FONT_MAP=(
     ["黑体"]="simhei.ttf"
     ["楷体"]="simkai.ttf"
     ["仿宋"]="simfang.ttf"
+    ["方正小标宋"]="fzxbs.ttf|fzxbsj.ttf|fzxiaoBS.ttf|FZXiaoBiaoSong.ttf|FZXiaoBiaoSong-B05S.ttf|FZXBSJW.ttf"
     ["Arial"]="arial.ttf|arialbd.ttf|arialbi.ttf|ariali.ttf"
     ["Times New Roman"]="times.ttf|timesbd.ttf|timesbi.ttf|timesi.ttf"
     ["Courier New"]="cour.ttf|courbd.ttf|courbi.ttf|couri.ttf"
