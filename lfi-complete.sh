@@ -626,72 +626,112 @@ fix_wps_fonts() {
     if [ "$wps_found" = true ]; then
         echo -e "  ${GREEN}检测到 WPS Office${NC}"
     else
-        echo -e "  ${YELLOW}未检测到 WPS Office，仍将配置通用符号字体映射${NC}"
+        echo -e "  ${YELLOW}未检测到 WPS Office，仅配置符号字体映射${NC}"
     fi
+    
+    echo ""
     
     # 读取现有配置
     local existing_content=""
     [ -f "$config_file" ] && existing_content=$(cat "$config_file")
     
-    # WPS符号字体映射配置
-    local wps_config='
-
-  <!-- WPS符号字体映射（解决WPS显示方框/乱码） -->
-  <alias>
-    <family>Wingdings</family>
-    <accept><family>FreeSerif</family></accept>
-  </alias>
-  <alias>
-    <family>Webdings</family>
-    <accept><family>FreeSerif</family></accept>
-  </alias>
-  <alias>
-    <family>Symbol</family>
-    <accept><family>FreeSerif</family></accept>
-  </alias>
-  
-  <!-- WPS公文常用字体映射 -->
-  <alias>
-    <family>仿宋_GB2312</family>
-    <accept><family>FangSong</family></accept>
-  </alias>
-  <alias>
-    <family>楷体_GB2312</family>
-    <accept><family>KaiTi</family></accept>
-  </alias>
-  <alias>
-    <family>小标宋</family>
-    <accept><family>Noto Serif CJK SC Bold</family></accept>
-  </alias>
-  <alias>
-    <family>黑体</family>
-    <accept><family>SimHei</family></accept>
-  </alias>'
+    # -------- 符号字体检查：Wingdings / Webdings / Symbol --------
+    echo -e "  ${BOLD}检查符号字体:${NC}"
+    local wps_config=""
+    local need_symbol_map=false
     
-    # 插入到 fontconfig 根元素内（</fontconfig>之前）
+    for sym_font in "Wingdings" "Webdings" "Symbol"; do
+        local sym_found=false
+        if fc-list "$sym_font" &>/dev/null; then
+            sym_found=true
+        fi
+        # 也检查通过之前别名是否能找到（比如 FreeSerif 已经映射了）
+        
+        if [ "$sym_found" = true ]; then
+            echo -e "    ${GREEN}✓${NC} ${sym_font} — 已安装"
+        else
+            echo -e "    ${YELLOW}✗${NC} ${sym_font} — 缺失，需配置别名 → FreeSerif"
+            need_symbol_map=true
+            wps_config="${wps_config}
+  <alias>
+    <family>${sym_font}</family>
+    <accept><family>FreeSerif</family></accept>
+  </alias>"
+        fi
+    done
+    
+    # -------- 政务公文专用字体检查 --------
+    echo ""
+    echo -e "  ${BOLD}检查中文字体:${NC}"
+    
+    # 公文用到的字体映射表：源字体 → 目标字体
+    local doc_fonts=(
+        "仿宋_GB2312:FangSong"
+        "楷体_GB2312:KaiTi"
+        "小标宋:Noto Serif CJK SC Bold"
+        "黑体:SimHei"
+    )
+    
+    local need_doc_map=false
+    
+    for entry in "${doc_fonts[@]}"; do
+        local src="${entry%%:*}"
+        local dst="${entry##*:}"
+        
+        # 检查源字体是否已存在（直接从系统字体找，不通过别名）
+        if fc-list "$src" &>/dev/null; then
+            echo -e "    ${GREEN}✓${NC} ${src} — 已安装"
+        else
+            # 检查替代目标是否已安装
+            if fc-list "$dst" &>/dev/null; then
+                echo -e "    ${YELLOW}✗${NC} ${src} — 缺失，配置别名 → ${dst}"
+                need_doc_map=true
+                wps_config="${wps_config}
+  <alias>
+    <family>${src}</family>
+    <accept><family>${dst}</family>
+  </alias>"
+            else
+                echo -e "    ${RED}✗${NC} ${src} — 缺失，且替代字体 ${dst} 也未安装"
+            fi
+        fi
+    done
+    
+    # -------- 写入配置 --------
+    echo ""
+    if [ "$need_symbol_map" = false ] && [ "$need_doc_map" = false ]; then
+        echo -e "  ${GREEN}所有字体已就绪，无需配置别名${NC}"
+        return
+    fi
+    
+    # 包裹配置
+    wps_config="
+  <!-- WPS符号字体映射（由 LFI 自动检测生成） -->${wps_config}"
+    
     if echo "$existing_content" | grep -q "WPS符号字体映射"; then
         log_info "WPS配置已存在，跳过"
     else
-        # 简单的插入：在 </fontconfig> 之前插入
         local new_content="${existing_content%</fontconfig>}${wps_config}"$'\n</fontconfig>'
         echo "$new_content" > "$config_file"
         log_info "WPS符号字体映射已配置"
     fi
     
     # 确保FreeSerif已安装（Wingdings/Webdings回退用）
-    if ! fc-list "FreeSerif" &>/dev/null; then
-        echo ""
-        echo -e "  ${YELLOW}建议安装 FreeSerif 字体（Wingdings/Webdings 的回退字体）${NC}"
-        echo -ne "  ${YELLOW}是否安装? (Y/n): ${NC}"
-        read -r install_fs
-        if [ "$install_fs" != "n" ] && [ "$install_fs" != "N" ]; then
-            case "$PKG_MGR" in
-                apt)  sudo apt install -y fonts-freefont-ttf 2>/dev/null ;;
-                dnf|yum) sudo dnf install -y freefont 2>/dev/null ;;
-                pacman) sudo pacman -S --noconfirm freefont 2>/dev/null ;;
-                *) log_warn "请手动安装: fonts-freefont-ttf (Debian) / freefont (Fedora)" ;;
-            esac
-            log_info "FreeSerif 安装完成"
+    if [ "$need_symbol_map" = true ]; then
+        if ! fc-list "FreeSerif" &>/dev/null; then
+            echo ""
+            echo -e "  ${YELLOW}需要安装 FreeSerif 字体（Wingdings/Webdings 的回退字体）${NC}"
+            echo -ne "  ${YELLOW}是否安装? (Y/n): ${NC}"
+            read -r install_fs
+            if [ "$install_fs" != "n" ] && [ "$install_fs" != "N" ]; then
+                case "$PKG_MGR" in
+                    apt)  sudo apt install -y fonts-freefont-ttf 2>/dev/null ;;
+                    dnf|yum) sudo dnf install -y freefont 2>/dev/null ;;
+                    pacman) sudo pacman -S --noconfirm freefont 2>/dev/null ;;
+                    *) log_warn "请手动安装: fonts-freefont-ttf (Debian) / freefont (Fedora)" ;;
+                esac
+                log_info "FreeSerif 安装完成"
+            fi
         fi
     fi
 }
@@ -706,55 +746,77 @@ configure_fontconfig_alias() {
     local existing_content=""
     [ -f "$config_file" ] && existing_content=$(cat "$config_file")
     
-    local alias_config='
-
-  <!-- Windows字体 → 开源替代 映射（由 LFI 配置） -->
-  
-  <!-- 微软雅黑 → 得意黑（如果已安装） -->
+    # 映射表：Windows字体 → 开源替代字体
+    # 格式：Windows字体名|开源替代1|开源替代2
+    local alias_map=(
+        "Microsoft YaHei|Smiley Sans|Noto Sans CJK SC"
+        "SimSun|Noto Serif CJK SC|"
+        "NSimSun|Noto Serif CJK SC|"
+        "宋体|Noto Serif CJK SC|"
+        "SimHei|Noto Sans CJK SC|"
+        "黑体|Noto Sans CJK SC|"
+        "KaiTi|LXGW WenKai|"
+        "楷体|LXGW WenKai|"
+        "FangSong|Noto Serif CJK SC|"
+        "仿宋|Noto Serif CJK SC|"
+    )
+    
+    echo ""
+    echo -e "  ${BOLD}检查字体状态:${NC}"
+    echo ""
+    
+    local alias_config=""
+    local has_any_work=false
+    
+    for entry in "${alias_map[@]}"; do
+        local win_font="${entry%%|*}"
+        local rest="${entry#*|}"
+        local alt1="${rest%%|*}"
+        local alt2="${rest##*|}"
+        [ "$alt2" = "$alt1" ] && alt2=""
+        
+        # 检查 Windows 字体是否已经安装
+        local win_installed=false
+        if fc-list "$win_font" &>/dev/null; then
+            win_installed=true
+        fi
+        
+        # 检查开源替代是否已安装
+        local alt_installed=false
+        local alt_used=""
+        if fc-list "$alt1" &>/dev/null; then
+            alt_installed=true
+            alt_used="$alt1"
+        elif [ -n "$alt2" ] && fc-list "$alt2" &>/dev/null; then
+            alt_installed=true
+            alt_used="$alt2"
+        fi
+        
+        if [ "$win_installed" = true ]; then
+            echo -e "    ${GREEN}✓${NC} ${win_font} — 已安装，无需别名"
+        elif [ "$alt_installed" = true ]; then
+            echo -e "    ${YELLOW}✗${NC} ${win_font} — 缺失，配置别名 → ${alt_used}"
+            has_any_work=true
+            alias_config="${alias_config}
   <alias>
-    <family>Microsoft YaHei</family>
+    <family>${win_font}</family>
     <prefer>
-      <family>Smiley Sans</family>
-      <family>Noto Sans CJK SC</family>
+      <family>${alt_used}</family>
     </prefer>
-  </alias>
-  
-  <!-- 宋体 → 思源宋体 -->
-  <alias>
-    <family>SimSun</family>
-    <family>NSimSun</family>
-    <family>宋体</family>
-    <prefer>
-      <family>Noto Serif CJK SC</family>
-    </prefer>
-  </alias>
-  
-  <!-- 黑体 → 思源黑体 -->
-  <alias>
-    <family>SimHei</family>
-    <family>黑体</family>
-    <prefer>
-      <family>Noto Sans CJK SC</family>
-    </prefer>
-  </alias>
-  
-  <!-- 楷体 → 霞鹜文楷 -->
-  <alias>
-    <family>KaiTi</family>
-    <family>楷体</family>
-    <prefer>
-      <family>LXGW WenKai</family>
-    </prefer>
-  </alias>
-  
-  <!-- 仿宋 → 思源宋体 -->
-  <alias>
-    <family>FangSong</family>
-    <family>仿宋</family>
-    <prefer>
-      <family>Noto Serif CJK SC</family>
-    </prefer>
-  </alias>'
+  </alias>"
+        else
+            echo -e "    ${RED}✗${NC} ${win_font} — 缺失，且替代字体 ${alt1}${alt2:+ / $alt2} 也未安装，跳过"
+        fi
+    done
+    
+    echo ""
+    if [ "$has_any_work" = false ]; then
+        echo -e "  ${GREEN}所有 Windows 字体已就绪，无需配置开源替代别名${NC}"
+        return
+    fi
+    
+    alias_config="
+  <!-- Windows字体 → 开源替代 映射（由 LFI 自动检测生成） -->${alias_config}"
     
     if echo "$existing_content" | grep -q "开源替代"; then
         log_info "开源替代别名配置已存在，跳过"
