@@ -1947,9 +1947,12 @@ show_about() {
 
 # -------- 主函数 --------
 main() {
+    local w=40
     echo ""
-    echo -e "  ${BOLD}${BLUE}━━━ Linux Font Installer ${LFI_VERSION} ━━━${NC}"
-    echo -e "  ${WHITE}一行命令，搞定 Linux 字体问题${NC}"
+    echo -e "${BLUE}     ╔$(printf '═%.0s' $(seq 1 $w))╗${NC}"
+    echo -e "${BLUE}     ║  ${BOLD}${WHITE}Linux Font Installer ${LFI_VERSION}${NC}${BLUE}  ║${NC}"
+    echo -e "${BLUE}     ╚$(printf '═%.0s' $(seq 1 $w))╝${NC}"
+    echo -e "       ${WHITE}一行命令，搞定 Linux 字体问题${NC}"
     echo ""
     detect_system
     prepare_env
