@@ -107,6 +107,17 @@ detect_system() {
     
     # 检测Windows挂载
     detect_windows
+    
+    # 国产操作系统中文名映射
+    OS_DISPLAY_NAME="${OS}"
+    case "${OS,,}" in
+        deepin) OS_DISPLAY_NAME="深度 Deepin" ;;
+        uos)    OS_DISPLAY_NAME="统信 UOS" ;;
+        kylin|openkylin) OS_DISPLAY_NAME="麒麟" ;;
+        neokylin) OS_DISPLAY_NAME="中标麒麟" ;;
+        openeuler) OS_DISPLAY_NAME="华为 openEuler" ;;
+        nfschina) OS_DISPLAY_NAME="中科方德" ;;
+    esac
 }
 
 detect_windows() {
@@ -183,10 +194,10 @@ detect_distro() {
     
     # 发行版家族归类
     case "${OS,,}" in
-        ubuntu|debian|deepin|uos|kali|linuxmint|elementary|pop|zorin|neon)
+        ubuntu|debian|deepin|uos|kali|linuxmint|elementary|pop|zorin|neon|kylin|openkylin|neokylin|nfschina)
             DISTRO_FAMILY="debian"
             ;;
-        fedora|rhel|centos|rocky|almalinux|oraclelinux)
+        fedora|rhel|centos|rocky|almalinux|oraclelinux|openeuler|openEuler)
             DISTRO_FAMILY="redhat"
             ;;
         opensuse*|suse)
@@ -1614,7 +1625,7 @@ print_header() {
 
 # -------- 系统状态栏 --------
 print_status_bar() {
-    echo -e " ${BLUE}系统:${NC} ${OS:-unknown} ${DISTRO_FAMILY:+($DISTRO_FAMILY)} | ${BLUE}架构:${NC} ${ARCH} | ${BLUE}包管理器:${NC} ${PKG_MGR}"
+    echo -e " ${BLUE}系统:${NC} ${OS_DISPLAY_NAME:-${OS:-unknown}} ${DISTRO_FAMILY:+($DISTRO_FAMILY)} | ${BLUE}架构:${NC} ${ARCH} | ${BLUE}包管理器:${NC} ${PKG_MGR}"
     if [ "$WIN_AVAILABLE" = true ]; then
         if [ ${#WIN_FONT_DIRS[@]} -gt 0 ]; then
             echo -e " ${BLUE}Windows字体:${NC} ${GREEN}已检测到${NC} (${#WIN_FONT_DIRS[@]}个位置)"
