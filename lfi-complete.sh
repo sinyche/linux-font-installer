@@ -1612,14 +1612,8 @@ verify_installation() {
 print_header() {
     local title="$1"
     local color="${2:-$BLUE}"
-    local width=56
-    local pad
-    pad=$(( (width - ${#title} - 2) / 2 ))
-    
     echo ""
-    echo -e "${color}   ╔$(printf '═%.0s' $(seq 1 $((width-2))))╗${NC}"
-    echo -e "${color}   ║$(printf ' %.0s' $(seq 1 $pad)) ${BOLD}${WHITE}${title}${NC}${color}$(printf ' %.0s' $(seq 1 $((width - pad - ${#title} - 2))))║${NC}"
-    echo -e "${color}   ╚$(printf '═%.0s' $(seq 1 $((width-2))))╝${NC}"
+    echo -e "  ${color}━━━ ${BOLD}${WHITE}${title}${NC}${color} ━━━${NC}"
     echo ""
 }
 
@@ -1949,12 +1943,9 @@ show_about() {
 
 # -------- 主函数 --------
 main() {
-    echo -e "\033[2J\033[H"
     echo ""
-    echo -e "${BOLD}${BLUE}   ╔═══════════════════════════════════════════╗${NC}"
-    echo -e "${BOLD}${BLUE}   ║     Linux Font Installer ${LFI_VERSION}           ║${NC}"
-    echo -e "${BOLD}${BLUE}   ║     一行命令，搞定 Linux 字体问题        ║${NC}"
-    echo -e "${BOLD}${BLUE}   ╚═══════════════════════════════════════════╝${NC}"
+    echo -e "  ${BOLD}${BLUE}━━━ Linux Font Installer ${LFI_VERSION} ━━━${NC}"
+    echo -e "  ${WHITE}一行命令，搞定 Linux 字体问题${NC}"
     echo ""
     detect_system
     prepare_env
