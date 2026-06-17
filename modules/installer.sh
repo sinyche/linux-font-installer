@@ -58,8 +58,10 @@ _install_scenario() {
                 # 跳过已安装的
                 if [ -f "$FONT_DIR_USER/$fname" ] || ([ "$HAS_ROOT" = true ] && [ -f "$FONT_DIR_SYSTEM/$fname" ]); then
                     ((skipped++))
-                    # 显示进度（包括跳过的）
-                    echo -ne "\r    检查: ${current}/${total}" 
+                    # 显示进度（每5个或最后一个才刷新）
+                    if [ $((current % 5)) -eq 0 ] || [ "$current" -eq "$total" ]; then
+                        echo -e "\r    检查: ${current}/${total}"
+                    fi
                     continue
                 fi
                 
@@ -81,8 +83,10 @@ _install_scenario() {
                     [ "$HAS_ROOT" = true ] && sudo cp "$font_file" "$FONT_DIR_SYSTEM/" 2>/dev/null
                     ((count++))
                 fi
-                # 显示进度
-                echo -ne "\r    安装: ${current}/${total}" 
+                # 显示进度（每5个或最后一个才刷新，避免缓冲问题）
+                if [ $((current % 5)) -eq 0 ] || [ "$current" -eq "$total" ]; then
+                    echo -e "\r    安装: ${current}/${total}"
+                fi
             done < "$flist"
             rm -f "$flist" 2>/dev/null
             echo ""
