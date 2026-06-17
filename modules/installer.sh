@@ -36,8 +36,12 @@ install_scenario() {
         if tar xzf "$pack_file" -C "$extract_dir" 2>/dev/null; then
             echo -e "${GREEN}完成${NC}"
             
+            echo -e "  ${BLUE}⟳${NC} 正在安装字体文件..."
             # 安装所有字体文件
             local count=0
+            local total=$(find "$extract_dir" \( -name "*.ttf" -o -name "*.ttc" -o -name "*.otf" -o -name "*.zip" \) 2>/dev/null | wc -l)
+            [ "$total" -eq 0 ] && total=1
+            local current=0
             for font_file in "$extract_dir"/*.{ttf,ttc,otf,zip}; do
                 [ -f "$font_file" ] 2>/dev/null || continue
                 local fname
@@ -45,6 +49,7 @@ install_scenario() {
                 
                 # 跳过已安装的
                 if [ -f "$FONT_DIR_USER/$fname" ] || ([ "$HAS_ROOT" = true ] && [ -f "$FONT_DIR_SYSTEM/$fname" ]); then
+                    ((current++))
                     continue
                 fi
                 
@@ -53,19 +58,25 @@ install_scenario() {
                     local zip_dir="$extract_dir/${fname%.zip}"
                     mkdir -p "$zip_dir"
                     if unzip -q -o "$font_file" -d "$zip_dir" 2>/dev/null; then
+                        local zcount=0
                         for inner in "$zip_dir"/*.{ttf,otf}; do
                             [ -f "$inner" ] 2>/dev/null || continue
                             cp "$inner" "$FONT_DIR_USER/" 2>/dev/null
                             [ "$HAS_ROOT" = true ] && sudo cp "$inner" "$FONT_DIR_SYSTEM/" 2>/dev/null
-                            ((count++))
+                            ((zcount++))
                         done
+                        ((count+=zcount))
                     fi
                 else
                     cp "$font_file" "$FONT_DIR_USER/" 2>/dev/null
                     [ "$HAS_ROOT" = true ] && sudo cp "$font_file" "$FONT_DIR_SYSTEM/" 2>/dev/null
                     ((count++))
                 fi
+                ((current++))
+                # 显示进度
+                echo -ne "\r    进度: ${current}/${total}" 
             done
+            echo ""
             
             echo -e "  ${GREEN}✓${NC} 安装了 ${BLUE}${count}${NC} 个字体文件"
         else
