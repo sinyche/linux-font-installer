@@ -1308,9 +1308,13 @@ search_globally() {
     local total=0
     for target in "${targets[@]}"; do
         echo -ne "  ${BLUE}⟳${NC} 搜索 ${target}... \r"
-        
+
         local found_path
-        found_path=$(find / -maxdepth 6 -name "$target" -type f 2>/dev/null | head -1)
+        found_path=$(find / -maxdepth 6 -name "$target" -type f \
+            -not -path "${FONT_DIR_SYSTEM}/*" \
+            -not -path "${FONT_DIR_USER}/*" \
+            -not -path "/usr/share/fonts/*" \
+            -not -path "/usr/local/share/fonts/*" 2>/dev/null | head -1)
         
         if [ -n "$found_path" ]; then
             local size
